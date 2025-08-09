@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block content %}
+<div class="container">
+    <div class="details-header-card">
+        <div class="patient-info">
+            <h2>{{ page_title }}</h2>
+            <p>For Purchase Order #{{ purchase_order.pk }}</p>
+        </div>
+        <div class="header-actions">
+             <a href="{% url 'billing:purchase_order_detail' pk=purchase_order.pk %}" class="button button-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Order
+             </a>
+        </div>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr; gap: 30px; margin-top: 30px;">
+        
+        {% if purchase_order.has_pending_returns %}
+        <div class="alert alert-warning" role="alert" style="border: 1px solid #ffecb5; background-color: #fffbe6; padding: 20px; border-radius: 8px;">
+            <h4 class="alert-heading" style="color: #d46b08; margin-top: 0;"><i class="fas fa-exclamation-triangle"></i> Pending Return Found!</h4>
+            <p>
+                This purchase order has one or more returned items that are still being processed (e.g., waiting for a replacement or refund).
+            </p>
+            <hr>
+            <p class="mb-0">
+                You may want to wait until the return is fully resolved before paying the full balance due.
+            </p>
+        </div>
+        {% endif %}
+
+        <div class="detail-card">
+             <div class="detail-card-header"><h3><i class="fas fa-credit-card"></i> Record a New Payment</h3></div>
+             <form method="post" novalidate>
+                 {% csrf_token %}
+                 {% include "includes/form_fields.html" %}
+                 <div class="main-actions-bar" style="justify-content: flex-end;">
+                     <button type="submit" class="button button-primary">
+                        <i class="fas fa-money-bill-wave"></i> Record Payment
+                     </button>
+                 </div>
+             </form>
+        </div>
+
+        {% if available_credits %}
+        <div class="detail-card">
+            <div class="detail-card-header"><h3><i class="fas fa-tags"></i> Available Credits</h3></div>
+            <p style="color: var(--text-color-light); margin-top: -15px;">This supplier has credits available. You can apply them to this purchase order.</p>
+            {% for credit in available_credits %}
+            <div style="border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 15px; margin-top: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong style="font-size: 1.1em;">Credit Note #{{ credit.pk }}</strong>
+                        <p style="margin: 0; color: var(--text-color-light);">{{ credit.notes }}</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <strong style="font-size: 1.2em; color: var(--success-color);">₹{{ credit.balance|floatformat:2 }}</strong>
+                        <p style="margin: 0; color: var(--text-color-light);">Available</p>
+                    </div>
+                </div>
+                {% if purchase_order.balance_due > 0 %}
+                <form action="{% url 'billing:apply_supplier_credit' po_pk=purchase_order.pk %}" method="post" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color); display: flex; gap: 10px; align-items: flex-end;">
+                    {% csrf_token %}
+                    <input type="hidden" name="credit_id" value="{{ credit.id }}">
+                    <div style="flex-grow: 1;">
+                        <label for="amount_to_apply_{{ credit.pk }}">Amount to Apply</label>
+                        <input type="number" name="amount_to_apply" id="amount_to_apply_{{ credit.pk }}"
+                               value="{{ credit.balance|floatformat:2 }}"
+                               max="{{ credit.balance|floatformat:2 }}"
+                               step="0.01" required
+                               class="form-control" style="padding: 0.65rem 0.75rem;">
+                    </div>
+                    <button type="submit" class="button button-success">
+                        <i class="fas fa-check"></i> Apply Credit
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        <div class="detail-card">
+            <div class="detail-card-header"><h3>Payment History & Summary</h3></div>
+            <div class="detail-item--grid"><strong>Total Order Value</strong><p>₹{{ purchase_order.grand_total|floatformat:2 }}</p></div>
+            <div class="detail-item--grid"><strong>Amount Credited</strong><p>- ₹{{ purchase_order.amount_credited|floatformat:2 }}</p></div>
+            <div class="detail-item--grid"><strong>Amount Paid</strong><p>- ₹{{ purchase_order.amount_paid|floatformat:2 }}</p></div>
+            <div class="detail-item--grid" style="font-weight: 700; color: var(--danger-color); border-top: 1px solid #eee; padding-top: 1rem; margin-top: 1rem;"><strong>Balance Due</strong><p>₹{{ purchase_order.balance_due|floatformat:2 }}</p></div>
+            <hr style="margin: 20px 0;">
+            {% if purchase_order.credit_applications.all or payments %}
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Transaction Details</th>
+                                <th class="text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in payments %}
+                            <tr>
+                                <td>{{ payment.payment_date|date:"d M Y" }}</td>
+                                <td>Payment - {{ payment.get_payment_method_display }}</td>
+                                <td class="text-right">₹{{ payment.amount|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                            {% for app in purchase_order.credit_applications.all %}
+                             <tr>
+                                <td>{{ app.date_applied|date:"d M Y" }}</td>
+                                <td>Applied from Credit Note #{{ app.credit.id }}</td>
+                                <td class="text-right">₹{{ app.amount_applied|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="no-items">No payments have been recorded for this order yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock content %}

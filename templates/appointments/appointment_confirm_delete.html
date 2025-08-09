@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block content %}
+<div class="detail-card" style="max-width: 600px; margin: 40px auto; text-align: center;">
+    <h2 style="color: var(--danger-color);">
+        <i class="fas fa-calendar-times" style="margin-right: 8px;"></i>
+        {{ page_title }}
+    </h2>
+    <p>Are you sure you want to delete the following appointment?</p>
+    <div style="text-align: left; display: inline-block; margin-bottom: 1.5rem; padding: 1rem; background-color: #F8FAFC; border-radius: var(--border-radius);">
+        <p><strong>Patient:</strong> {{ appointment.patient.name }}</p>
+        <p><strong>Doctor:</strong> Dr. {{ appointment.doctor.name }}</p>
+        <p><strong>Date:</strong> {{ appointment.appointment_datetime|date:"F j, Y, P" }}</p>
+    </div>
+    <p style="font-weight: bold; color: var(--danger-color);">This action cannot be undone.</p>
+    <div class="main-actions-bar" style="justify-content: center; border-top: none;">
+        <a href="{% url 'appointments:appointment_detail' pk=appointment.pk %}" class="button button-secondary">
+            <i class="fas fa-arrow-left"></i> Cancel
+        </a>
+        <form method="POST" style="margin: 0; display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="button button-danger">
+                <i class="fas fa-trash"></i> Yes, Delete Appointment
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock content %}

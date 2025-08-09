@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block content %}
+    <div style="text-align: center; max-width: 600px; margin: auto;">
+        <h2 style="color: var(--danger-color);">{{ page_title }}</h2>
+        <p>Are you sure you want to delete the patient: <strong>{{ patient.name }}</strong>?</p>
+        <p style="font-weight: bold; color: var(--danger-color);">This action cannot be undone.</p>
+
+        <div class="main-actions-bar" style="justify-content: center; border-top: none;">
+            <a href="{% url 'patients:patient_detail' patient.pk %}" class="button button-secondary">
+                <i class="fas fa-arrow-left"></i> Cancel
+            </a>
+            <form method="POST">
+                {% csrf_token %}
+                <button type="submit" class="button button-danger">
+                    <i class="fas fa-trash"></i> Yes, Delete Patient
+                </button>
+            </form>
+        </div>
+    </div>
+{% endblock content %}

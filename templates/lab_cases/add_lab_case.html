@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Dental Clinic MS{% endblock title %}
+
+{% block content %}
+<h2>{{ page_title }}</h2>
+
+<form method="POST">
+    {% csrf_token %}
+    
+    {{ form.non_field_errors }}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+        {% for field in form %}
+            <div class="field-container">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}
+                    <small style="display: block; margin-top: 0.25rem; color: var(--text-color-light);">{{ field.help_text }}</small>
+                {% endif %}
+                {{ field.errors }}
+            </div>
+        {% endfor %}
+    </div>
+    
+    <div class="main-actions-bar" style="justify-content: flex-end;">
+        <a href="{% url 'lab_cases:lab_case_list' %}" class="button button-secondary">
+            <i class="fas fa-arrow-left"></i> Cancel
+        </a>
+        <button type="submit" class="button button-success">
+            <i class="fas fa-save"></i> Save Lab Case
+        </button>
+    </div>
+</form>
+
+{% endblock content %}

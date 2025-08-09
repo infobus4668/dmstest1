@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block content %}
+<h2>{{ page_title }}</h2>
+
+<div class="no-items" style="text-align: left; padding: 10px; font-style: normal; margin-bottom: 25px; background-color: #cff4fc; color: #055160; border: 1px solid #b6effb;">
+    <p style="margin:0;"><strong>Patient:</strong> {{ appointment.patient.name }}</p>
+    <p style="margin:0;"><strong>Doctor:</strong> Dr. {{ appointment.doctor.name }}</p>
+    <p style="margin:0;"><strong>Appointment Date:</strong> {{ appointment.appointment_datetime|date:"F d, Y" }}</p>
+</div>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <div class="detail-card mb-4">
+        <div class="detail-card-header"><h3>Prescription Notes</h3></div>
+        <div class="detail-card-body">
+            {% if prescription_form.non_field_errors %}
+                <div class="error-message" style="color: var(--danger-color);">{{ prescription_form.non_field_errors }}</div>
+            {% endif %}
+            <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+                {% for field in prescription_form %}
+                    <div class="field-container">
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                        {% for error in field.errors %}<div class="error-message" style="color: var(--danger-color);">{{ error }}</div>{% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-card">
+        <div class="detail-card-header"><h3>Medications</h3></div>
+        <div class="detail-card-body">
+            {{ item_formset.management_form }} 
+
+            {% if item_formset.non_form_errors %}
+                <div class="errorlist formset-errors" style="color: var(--danger-color);">
+                    {% for error in item_formset.non_form_errors %}<p>{{ error }}</p>{% endfor %}
+                </div>
+            {% endif %}
+            
+            <div id="prescription-items-container">
+                {% for form in item_formset %}
+                    <div class="formset-row" id="{{ form.prefix }}-row-{{ forloop.counter0 }}" style="border-bottom: 1px solid #eee; padding-bottom: 1em; margin-bottom: 1em;">
+                        {% if form.non_field_errors %}<div class="errorlist" style="color: var(--danger-color);">{{ form.non_field_errors }}</div>{% endif %}
+                        {% for hidden_field in form.hidden_fields %}{{ hidden_field }}{% endfor %}
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;"> 
+                            {% for field in form.visible_fields %}
+                                <div class="field-container"> 
+                                    {{ field.label_tag }}
+                                    {{ field }}
+                                    {% for error in field.errors %}<div class="error-message" style="color: var(--danger-color);">{{ error }}</div>{% endfor %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                         {% if form.instance.pk and item_formset.can_delete %} 
+                            <div class="delete-checkbox-container" style="margin-top: 10px;">
+                                <label for="{{ form.DELETE.id_for_label }}">
+                                    {{ form.DELETE }} <i class="fas fa-trash"></i> Remove
+                                </label>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <template id="empty-form-template" style="display: none;">
+                <div class="formset-row" style="border-bottom: 1px solid #eee; padding-bottom: 1em; margin-bottom: 1em;"> 
+                    {% for hidden_field in item_formset.empty_form.hidden_fields %}{{ hidden_field }}{% endfor %}
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;"> 
+                        {% for field in item_formset.empty_form.visible_fields %}
+                            <div class="field-container">
+                                {{ field.label_tag }}
+                                {{ field }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% if item_formset.can_delete_extra %}<div style="display:none;">{{ item_formset.empty_form.DELETE }}</div>{% endif %}
+                </div>
+            </template>
+
+            <button type="button" class="add-row-button button" id="add-item-button" style="margin-top: 10px;">
+                <i class="fas fa-plus"></i> Add Medication
+            </button>
+        </div>
+    </div>
+    
+    <div class="main-actions-bar">
+        <a href="{% url 'appointments:appointment_detail' appointment.pk %}" class="button button-secondary">
+            <i class="fas fa-arrow-left"></i> Cancel
+        </a>
+        <button type="submit" class="button button-success">
+            <i class="fas fa-save"></i> Save Prescription
+        </button>
+    </div>
+</form>
+{% endblock content %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addItemButton = document.getElementById('add-item-button');
+    const itemsContainer = document.getElementById('prescription-items-container');
+    const totalFormsInput = document.querySelector('input[name="{{ item_formset.prefix }}-TOTAL_FORMS"]'); 
+    const emptyFormTemplateDiv = document.getElementById('empty-form-template');
+
+    if (!addItemButton || !itemsContainer || !totalFormsInput || !emptyFormTemplateDiv) {
+        console.error('Formset JavaScript Error: One or more required elements not found for dynamic rows.');
+        return; 
+    }
+    const emptyFormHtml = emptyFormTemplateDiv.innerHTML;
+
+    addItemButton.addEventListener('click', function() {
+        let formIdx = parseInt(totalFormsInput.value);
+        let newFormRowHtml = emptyFormHtml.replace(/__prefix__/g, formIdx);
+        
+        let tempDiv = document.createElement('div');
+        tempDiv.innerHTML = newFormRowHtml.trim();
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.innerHTML = '<i class="fas fa-trash"></i> Remove';
+        removeBtn.classList.add('remove-row-btn', 'button', 'button-danger');
+        removeBtn.style.cssText = 'font-size: 0.8em; padding: 5px 10px; margin-top: 10px;';
+        removeBtn.onclick = function() { this.parentElement.remove(); };
+
+        let newFormElement = tempDiv.firstChild;
+        if (newFormElement) {
+            newFormElement.appendChild(removeBtn);
+            itemsContainer.appendChild(newFormElement);
+            totalFormsInput.value = formIdx + 1;
+        }
+    });
+
+    itemsContainer.querySelectorAll('.remove-row-btn').forEach(btn => {
+        btn.onclick = function() {
+            const row = this.closest('.formset-row');
+            const deleteInput = row.querySelector('input[type=checkbox][name$="-DELETE"]');
+            if(deleteInput) {
+                deleteInput.checked = true;
+                row.style.display = 'none';
+            }
+        }
+    });
+});
+</script>
+{% endblock extra_js %}

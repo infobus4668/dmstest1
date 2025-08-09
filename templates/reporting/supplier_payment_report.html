@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block extra_head %}
+<style>
+    #report-filter-form {
+        display: flex;
+        align-items: center; 
+        gap: 20px; 
+        flex-wrap: wrap; 
+    }
+    #report-filter-form > div {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    #report-filter-form label {
+        margin-bottom: 0; 
+        font-weight: 600;
+        color: var(--text-color-light);
+    }
+    #report-filter-form .select2-container { min-width: 180px; }
+    #report-filter-form input,
+    #report-filter-form select {
+        width: auto; 
+    }
+    #report-filter-form .filter-buttons { margin-left: auto; gap: 10px; }
+    #report_date_range { 
+        min-width: 240px; 
+        text-align: center; 
+        cursor: pointer;
+    }
+</style>
+{% endblock extra_head %}
+
+
+{% block content %}
+<h2>{{ page_title }}</h2>
+<p>Filter by date range and/or supplier to view payment history.</p>
+
+<div class="detail-card" style="margin-bottom: 2em;">
+  <form method="get" id="report-filter-form">
+    <div>
+        <label for="{{ form.date_range.id_for_label }}"><i class="fas fa-calendar-alt"></i></label>
+        {{ form.date_range }}
+    </div>
+    {% if form.supplier %}
+    <div>
+        <label for="{{ form.supplier.id_for_label }}">Supplier</label>
+        {{ form.supplier }}
+    </div>
+    {% endif %}
+    <div class="filter-buttons">
+        <button type="submit" class="button button-primary">
+            <i class="fas fa-filter"></i> Filter
+        </button>
+        <a href="{{ request.path }}" class="button button-secondary">
+            <i class="fas fa-times"></i> Clear
+        </a>
+    </div>
+</form>
+</div>
+
+{% if payments %}
+    <ul class="messages">
+        <li class="success" style="text-align: center; font-size: 1.1em;">
+            Total Paid in this Period: <strong>₹{{ total_paid|floatformat:2 }}</strong>
+        </li>
+    </ul>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Payment Date</th>
+                    <th>Supplier</th>
+                    <th>For PO #</th>
+                    <th>Payment Method</th>
+                    <th style="text-align: right;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                <tr>
+                    <td>{{ payment.payment_date|date:"Y-m-d" }}</td>
+                    <td>{{ payment.purchase_order.supplier.name }}</td>
+                    <td><a href="{% url 'billing:purchase_order_detail' payment.purchase_order.pk %}">{{ payment.purchase_order.pk }}</a></td>
+                    <td>{{ payment.get_payment_method_display }}</td>
+                    <td style="text-align: right;">₹{{ payment.amount|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="no-items">
+        <p>No supplier payments were recorded matching your filter criteria.</p>
+    </div>
+{% endif %}
+
+{% endblock content %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    $(document).ready(function() {
+        $('.select2-enable').select2({
+            placeholder: "Select a Supplier",
+            allowClear: true,
+            theme: "classic",
+            width: 'resolve'
+        });
+
+        const dateRangeInput = $('#report_date_range');
+        dateRangeInput.daterangepicker({
+            autoUpdateInput: false,
+            locale: { cancelLabel: 'Clear', format: 'DD/MM/YYYY' },
+            ranges: {
+               'Today': [moment(), moment()],
+               'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+               'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+               'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+               'This Month': [moment().startOf('month'), moment().endOf('month')],
+               'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+            }
+        });
+        dateRangeInput.on('apply.daterangepicker', function(ev, picker) {
+            $(this).val(picker.startDate.format('DD/MM/YYYY') + ' - ' + picker.endDate.format('DD/MM/YYYY'));
+        });
+        dateRangeInput.on('cancel.daterangepicker', function(ev, picker) {
+            $(this).val('');
+        });
+    });
+</script>
+{% endblock %}

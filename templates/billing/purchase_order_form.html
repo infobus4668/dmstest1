@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block content %}
+<div class="container">
+    <form method="POST" id="po-form">
+        <div class="details-header-card">
+            <div class="patient-info">
+                 <h2><i class="fas fa-file-invoice"></i> {{ page_title }}</h2>
+            </div>
+        </div>
+        {% csrf_token %}
+        <div class="detail-card" style="margin-top: 30px; margin-bottom: 30px;">
+            <div class="detail-card-header"><h3><i class="fas fa-info-circle"></i> Order Details</h3></div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                <div class="field-container">{{ form.supplier.label_tag }}{{ form.supplier }}{{ form.supplier.errors }}</div>
+                <div class="field-container">{{ form.order_date.label_tag }}{{ form.order_date }}{{ form.order_date.errors }}</div>
+                <div class="field-container" style="grid-column: 1 / -1;">{{ form.notes.label_tag }}{{ form.notes }}{{ form.notes.errors }}</div>
+            </div>
+        </div>
+        <div class="detail-card">
+            <div class="detail-card-header">
+                <h3><i class="fas fa-list"></i> Items to Order</h3>
+            </div>
+            <div id="item-form-container">
+                {{ formset.management_form }}
+                {% if formset.non_form_errors %}
+                    <ul class="messages"><li class="error">{{ formset.non_form_errors.as_text }}</li></ul>
+                {% endif %}
+                {% for item_form in formset %}
+                    <div class="formset-row">
+                        {% if item_form.non_field_errors %}<ul class="messages"><li class="error">{{ item_form.non_field_errors.as_text }}</li></ul>{% endif %}
+                        {% for hidden in item_form.hidden_fields %}{{ hidden }}{% endfor %}
+                        <div style="display: none;">{{ item_form.DELETE }}</div>
+                        <div class="po-row-grid">
+                            <div class="field-container">{{ item_form.product_variant.label_tag }}{{ item_form.product_variant }}{{ item_form.product_variant.errors }}</div>
+                            <div class="field-container">{{ item_form.quantity.label_tag }}{{ item_form.quantity }}{{ item_form.quantity.errors }}</div>
+                            <div class="field-container remove-btn-cell">
+                                <button type="button" class="remove-row-btn button button-danger"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+                <button type="button" id="add-item-button" class="button button-primary">
+                    <i class="fas fa-plus"></i> Add Item
+                </button>
+            </div>
+            <template id="item-form-template">
+                <div class="formset-row">
+                    {% for hidden in formset.empty_form.hidden_fields %}{{ hidden }}{% endfor %}
+                    <div style="display: none;">{{ formset.empty_form.DELETE }}</div>
+                    <div class="po-row-grid">
+                        <div class="field-container">{{ formset.empty_form.product_variant.label_tag }}{{ formset.empty_form.product_variant }}</div>
+                        <div class="field-container">{{ formset.empty_form.quantity.label_tag }}{{ formset.empty_form.quantity }}</div>
+                        <div class="field-container remove-btn-cell">
+                            <button type="button" class="remove-row-btn button button-danger"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+        <div class="main-actions-bar">
+            <a href="{% url 'billing:purchase_order_list' %}" class="button button-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+            <button type="submit" class="button button-success">
+                <i class="fas fa-save"></i> Save Purchase Order
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+{{ block.super }}
+<style>
+.po-row-grid { 
+    display: grid;
+    grid-template-columns: 4fr 1fr 60px;
+    gap: 15px; 
+    align-items: flex-start;
+    border-bottom: 1px solid #eee; 
+    padding-bottom: 1.5em; 
+    margin-bottom: 1.5em; 
+}
+.remove-btn-cell { 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 2.2em;
+}
+.remove-btn-cell .button {
+    padding: 8px 12px;
+}
+</style>
+<script>
+$(document).ready(function() {
+    const formContainer = $('#item-form-container');
+    const totalFormsInput = $('input[name="items-TOTAL_FORMS"]');
+    const template = $('#item-form-template').html();
+
+    $('#add-item-button').on('click', function() {
+        let formNum = parseInt(totalFormsInput.val());
+        let newFormHTML = template.replace(/__prefix__/g, formNum);
+        let newRow = $(newFormHTML);
+        formContainer.append(newRow);
+        
+        // ✅ FIX: Initialize select2 specifically on the new row's widget.
+        newRow.find('.django-select2').djangoSelect2();
+        
+        totalFormsInput.val(formNum + 1);
+    });
+
+    formContainer.on('click', '.remove-row-btn', function() {
+        const row = $(this).closest('.formset-row');
+        const deleteInput = row.find('input[name$="-DELETE"]');
+        if (deleteInput.length) {
+            deleteInput.prop('checked', true);
+        }
+        row.hide();
+    });
+});
+</script>
+{% endblock extra_js %}

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block content %}
+<div class="detail-card">
+    <div class="detail-card-header">
+        <h3>{{ page_title }}</h3>
+        <div class="header-actions">
+            <a href="{% url 'billing:add_service' %}" class="button button-primary">
+                <i class="fas fa-plus"></i> Add New Service
+            </a>
+        </div>
+    </div>
+    
+    {% if services_list %}
+    <div class="table-responsive">
+    <table>
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Price</th>
+        <th>Active</th>
+        <th>Created</th>
+        <th>Updated</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for service in services_list %}
+    <tr>
+        <td>{{ service.name }}</td>
+        <td>₹{{ service.price|floatformat:2 }}</td>
+        <td>
+            {% if service.is_active %}
+                <span class="status-badge status-CMP">Yes</span>
+            {% else %}
+                <span class="status-badge status-CANCELLED">No</span>
+            {% endif %}
+        </td>
+        <td>{{ service.created_at|date:"Y-m-d H:i" }}</td>
+        <td>{{ service.updated_at|date:"Y-m-d H:i" }}</td>
+        <td class="actions-column">
+            <a href="{% url 'billing:edit_service' service.pk %}" class="button button-warning" style="margin-right: 5px;">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+            <a href="{% url 'billing:delete_service' service.pk %}" class="button button-danger">
+                <i class="fas fa-trash"></i> Delete
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+    </div>
+    {% else %}
+        <div class="no-items"><p>No services found in the system yet.</p></div>
+    {% endif %}
+</div>
+{% endblock content %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block content %}
+<h2>{{ page_title }}</h2>
+
+<div class="info-card-grid">
+    <div class="info-card">
+        <div class="info-card-title">Total Invoiced (for {{ report_month }})</div>
+        <div class="info-card-value">₹{{ total_invoiced_this_month|floatformat:2 }}</div>
+    </div>
+    {# Using an inline style for the success color as no info-card variant exists for it in main.css #}
+    <div class="info-card" style="border-left-color: var(--success-color);">
+        <div class="info-card-title">Total Paid (for {{ report_month }})</div>
+        <div class="info-card-value" style="color: var(--success-color);">₹{{ total_paid_this_month|floatformat:2 }}</div>
+    </div>
+    <div class="info-card total-due">
+        <div class="info-card-title">Total Outstanding Balance (All Time)</div>
+        <div class="info-card-value">₹{{ total_outstanding_balance|floatformat:2 }}</div>
+    </div>
+</div>
+
+<div class="main-actions-bar">
+    <a href="{% url 'billing:invoice_list' %}" class="button button-secondary">
+        <i class="fas fa-file-invoice"></i> View All Invoices
+    </a>
+</div>
+
+{% endblock content %}

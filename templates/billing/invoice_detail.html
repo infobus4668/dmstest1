@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block content %}
+    <div class="details-header-card">
+        <div class="patient-info">
+            <h2>Invoice {{ invoice.invoice_number }}</h2>
+            <p>For Patient: <a href="{% url 'patients:patient_detail' pk=invoice.patient.pk %}">{{ invoice.patient.name }}</a></p>
+        </div>
+        <div class="header-actions">
+            {% if invoice.balance_due > 0 %}
+                <a href="{% url 'billing:add_invoice_payment' pk=invoice.pk %}" class="button button-success">
+                    <i class="fas fa-credit-card"></i> Add Payment
+                </a>
+            {% elif invoice.balance_due < 0 %}
+                <a href="{% url 'billing:record_refund' pk=invoice.pk %}" class="button button-orange">
+                    <i class="fas fa-undo"></i> Record Refund
+                </a>
+            {% endif %}
+            <a href="{% url 'billing:print_invoice' pk=invoice.pk %}" target="_blank" class="button button-info">
+                <i class="fas fa-print"></i> Print Invoice
+            </a>
+            <a href="{% url 'billing:edit_invoice' pk=invoice.pk %}" class="button button-warning">
+                <i class="fas fa-edit"></i> Edit Invoice
+            </a>
+            <a href="{% url 'billing:delete_invoice' pk=invoice.pk %}" class="button button-danger">
+                <i class="fas fa-trash"></i> Delete Invoice
+            </a>
+        </div>
+    </div>
+    <div class="details-grid">
+        <div class="main-details">
+            <div class="detail-card">
+                <div class="detail-card-header"><h3>Invoice Items</h3></div>
+                {% if invoice_items %}
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th>Qty</th>
+                                    <th style="text-align: right;">Unit Price</th>
+                                    <th style="text-align: right;">Discount</th>
+                                    <th style="text-align: right;">Net Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in invoice_items %}
+                                <tr>
+                                    <td>{{ item.display_description }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td style="text-align: right;">₹{{ item.unit_price|floatformat:2 }}</td>
+                                    <td style="text-align: right;">- ₹{{ item.discount|floatformat:2 }}</td>
+                                    <td style="text-align: right;">₹{{ item.net_price|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="no-items"><p>No items have been added to this invoice.</p></div>
+                {% endif %}
+            </div>
+            {% if invoice.notes %}
+                <div class="detail-card" style="margin-top: 30px;">
+                    <div class="detail-card-header"><h3>Notes</h3></div>
+                    <div class="record-text">{{ invoice.notes|linebreaksbr }}</div>
+                </div>
+            {% endif %}
+        </div>
+        <div class="side-details">
+            <div class="detail-card">
+                <div class="detail-card-header"><h3>Financial Summary</h3></div>
+                <div class="detail-item--grid">
+                    <strong>Subtotal</strong>
+                    <p style="text-align: right;">₹{{ invoice.total_amount|floatformat:2 }}</p>
+                </div>
+                <div class="detail-item--grid">
+                    <strong>Total Discount</strong>
+                    <p style="text-align: right;">- ₹{{ invoice.total_discount|floatformat:2 }}</p>
+                </div>
+                <div class="detail-item--grid" style="font-weight: 600;">
+                    <strong>Net Amount</strong>
+                    <p style="text-align: right;">₹{{ invoice.net_amount|floatformat:2 }}</p>
+                </div>
+                <div class="detail-item--grid">
+                    <strong>Amount Paid</strong>
+                    <p style="text-align: right;">- ₹{{ invoice.amount_paid|floatformat:2 }}</p>
+                </div>
+                <div class="detail-item--grid" style="font-weight: 600;">
+                    <strong>Total Refunded</strong>
+                    <p style="text-align: right;">+ ₹{{ invoice.total_refunded|floatformat:2 }}</p>
+                </div>
+                <div class="detail-item--grid" style="font-size: 1.2em; font-weight: 700; border-top: 2px solid var(--border-color); padding-top: 1rem; margin-top: 1rem; color: {% if invoice.balance_due < 0 %}var(--success-color){% else %}var(--danger-color){% endif %};">
+                    <strong>{% if invoice.balance_due < 0 %}Credit Available{% else %}Balance Due{% endif %}</strong>
+                    <p style="text-align: right;">₹{{ invoice.balance_due|floatformat:2 }}</p>
+                </div>
+            </div>
+            <div class="detail-card" style="margin-top: 30px;">
+                <div class="detail-card-header"><h3>Invoice Details</h3></div>
+                 <div class="detail-item--grid">
+                    <strong>Status</strong>
+                    <p><span class="status-badge status-{{ invoice.status }}">{{ invoice.get_status_display }}</span></p>
+                </div>
+                <div class="detail-item--grid">
+                    <strong>Doctor</strong>
+                    <p>{% if invoice.doctor %}<a href="#">Dr. {{ invoice.doctor.name }}</a>{% else %}N/A{% endif %}</p>
+                </div>
+                <div class="detail-item--grid">
+                    <strong>Invoice Date</strong>
+                    <p>{{ invoice.invoice_date }}</p>
+                </div>
+                <div class="detail-item--grid">
+                    <strong>Due Date</strong>
+                    <p>{{ invoice.due_date|default:"N/A" }}</p>
+                </div>
+                 <div class="detail-item--grid">
+                    <strong>Last Updated</strong>
+                    <p>{{ invoice.updated_at|date:"F j, Y, P" }}</p>
+                </div>
+            </div>
+            <div class="detail-card" style="margin-top: 30px;">
+                <div class="detail-card-header"><h3>Payment History</h3></div>
+                {% if payments %}
+                    <div class="table-responsive">
+                        <table style="font-size: 0.9em;">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Method</th>
+                                    <th style="text-align: right;">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in payments %}
+                                <tr>
+                                    <td>{{ payment.payment_date|date:"d M Y, P" }}</td>
+                                    <td>{{ payment.get_payment_method_display }}</td>
+                                    <td style="text-align: right;">₹{{ payment.amount|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="no-items">No payments have been recorded.</p>
+                {% endif %}
+            </div>
+            <div class="detail-card" style="margin-top: 30px;">
+                <div class="detail-card-header"><h3>Refund History</h3></div>
+                {% if refunds %}
+                    <div class="table-responsive">
+                        <table style="font-size: 0.9em;">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Method</th>
+                                    <th style="text-align: right;">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for refund in refunds %}
+                                <tr>
+                                    <td>{{ refund.refund_date|date:"d M Y, P" }}</td>
+                                    <td>{{ refund.get_method_display }}</td>
+                                    <td style="text-align: right;">₹{{ refund.amount|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="no-items">No refunds have been recorded.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="main-actions-bar">
+        <a href="{% url 'billing:invoice_list' %}" class="button button-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Invoices
+        </a>
+    </div>
+{% endblock content %}

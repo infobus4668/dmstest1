@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Low Stock Report{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="page-actions" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0; flex: 1 1 auto;">Low Stock Products</h2>
+        <a href="{% url 'billing:inventory_list' %}" class="button button-secondary">
+            <i class="fas fa-cubes"></i> Inventory
+        </a>
+        <a href="{% url 'billing:product_list' %}" class="button button-secondary">
+            <i class="fas fa-boxes"></i> Products
+        </a>
+        <a href="{% url 'billing:purchase_order_list' %}" class="button button-secondary">
+            <i class="fas fa-file-invoice"></i> Purchase Orders
+        </a>
+    </div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Product Variant</th>
+                    <th>Brand</th>
+                    <th>Current Stock</th>
+                    <th>Threshold</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for product in low_stock_products %}
+                <tr>
+                    <td>{{ product }}</td>
+                    <td>{{ product.brand|default:"-" }}</td>
+                    <td>{{ product.current_stock }}</td>
+                    <td>{{ product.low_stock_threshold }}</td>
+                    <td>
+                        {% if product.current_stock <= product.low_stock_threshold %}
+                            <span style="color: red;"><i class="fas fa-exclamation-triangle"></i> Low</span>
+                        {% else %}
+                            <span style="color: green;"><i class="fas fa-check-circle"></i> OK</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="5">No products are currently below their low stock threshold.</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

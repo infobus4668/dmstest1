@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Patient: {{ patient.name }}{% endblock title %}
+
+{% block content %}
+    <div class="details-header-card">
+        <div class="patient-info">
+            <h2>{{ patient.name }}</h2>
+            <p>ID: {{ patient.pk }} | Age: {{ patient.age }} Years | Gender: {{ patient.get_gender_display }}</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'patients:edit_patient' patient.pk %}" class="button button-warning">
+                <i class="fas fa-edit"></i> Edit Details
+            </a>
+            <a href="{% url 'appointments:schedule_appointment' %}?pk={{ patient.pk }}" class="button button-success">
+                <i class="fas fa-calendar-plus"></i> New Appointment
+            </a>
+            <a href="{% url 'billing:create_invoice' %}?patient_pk={{ patient.pk }}" class="button button-info">
+                <i class="fas fa-file-invoice"></i> Create Invoice
+            </a>
+        </div>
+    </div>
+
+    {# **FIX:** Main container for the new layout #}
+    <div class="patient-details-container">
+        {# Top Row: Personal and Medical Info side-by-side #}
+        <div class="top-info-grid">
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <h3>Personal Information</h3>
+                </div>
+                <div class="detail-item--grid">
+                    <strong>Date of Birth</strong>
+                    <p>{{ patient.date_of_birth|date:"d-m-Y" }}</p>
+                </div>
+                <div class="detail-item--grid">
+                    <strong>Contact Number</strong>
+                    <p>{{ patient.contact_number }}</p>
+                </div>
+                <div class="detail-item--grid">
+                    <strong>Place</strong>
+                    <p>{{ patient.place|default:"N/A" }}</p>
+                </div>
+                 <div class="detail-item--grid">
+                    <strong>Pincode</strong>
+                    <p>{{ patient.pincode|default:"N/A" }}</p>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                 <div class="detail-card-header">
+                    <h3>Medical Information</h3>
+                </div>
+                <div class="detail-item">
+                    <strong>Allergies</strong>
+                    <div class="record-text">{{ patient.allergies|default:"None recorded."|linebreaksbr }}</div>
+                </div>
+                <div class="detail-item">
+                    <strong>Ongoing Conditions</strong>
+                    <div class="record-text">{{ patient.ongoing_conditions|default:"None recorded."|linebreaksbr }}</div>
+                </div>
+                <div class="detail-item">
+                    <strong>Current Medications</strong>
+                    <div class="record-text">{{ patient.medications|default:"None recorded."|linebreaksbr }}</div>
+                </div>
+            </div>
+        </div>
+
+        {# Full-width cards for history and record info #}
+        <div class="detail-card full-width-card">
+            <div class="detail-card-header">
+                <h3>Appointment History</h3>
+            </div>
+            {% if patient.appointments.all %}
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Doctor</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for appointment in patient.appointments.all %}
+                            <tr>
+                                <td>{{ appointment.appointment_datetime|date:"d-m-Y P" }}</td>
+                                <td>{{ appointment.doctor.name }}</td>
+                                <td><span class="status-badge status-{{ appointment.status }}">{{ appointment.get_status_display }}</span></td>
+                                <td>
+                                    <a href="{% url 'appointments:appointment_detail' appointment.pk %}" class="button button-secondary" style="padding: 5px 10px; font-size: 0.9em;">
+                                        <i class="fas fa-eye"></i> Details
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="no-items"><p>No appointment history.</p></div>
+            {% endif %}
+        </div>
+
+        <div class="detail-card full-width-card">
+            <div class="detail-card-header">
+                <h3>Invoice History</h3>
+            </div>
+            {% if patient.invoices.all %}
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Invoice #</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for invoice in patient.invoices.all %}
+                            <tr>
+                                <td>{{ invoice.invoice_number }}</td>
+                                <td>₹{{ invoice.total_amount|floatformat:2 }}</td>
+                                <td><span class="status-badge status-{{ invoice.status }}">{{ invoice.get_status_display }}</span></td>
+                                <td>
+                                    <a href="{% url 'billing:invoice_detail' invoice.pk %}" class="button button-secondary" style="padding: 5px 10px; font-size: 0.9em;">
+                                        <i class="fas fa-eye"></i> Details
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="no-items"><p>No invoice history.</p></div>
+            {% endif %}
+        </div>
+
+        <div class="detail-card full-width-card">
+            <div class="detail-card-header"><h3>Record Information</h3></div>
+            <div class="detail-item--grid">
+                <strong>Record Created On</strong>
+                <p>{{ patient.created_at|date:"d-m-Y, P" }}</p>
+            </div>
+            <div class="detail-item--grid">
+                <strong>Last Updated On</strong>
+                <p>{{ patient.updated_at|date:"d-m-Y, P" }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="main-actions-bar">
+        <a href="{% url 'patients:delete_patient' patient.pk %}" class="button button-danger" style="margin-left: auto;">
+            <i class="fas fa-trash"></i> Delete Patient
+        </a>
+        <a href="{% url 'patients:patient_list' %}" class="button button-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Patient List
+        </a>
+    </div>
+
+    <style>
+        .patient-details-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        .top-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        .full-width-card {
+            grid-column: 1 / -1;
+        }
+        @media (max-width: 992px) {
+            .top-info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock content %}

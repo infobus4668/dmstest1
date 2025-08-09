@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title|default:"Edit Staff Member" }}{% endblock title %}
+
+{% block content %}
+<div class="detail-card" style="max-width: 900px; margin: 20px auto;">
+    <div class="detail-card-header">
+        <h3>{{ page_title|default:"Add New Staff Member" }}</h3>
+    </div>
+    
+    <form method="POST" novalidate>
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+            <div class="messages error" style="list-style-type: none; padding-left: 0;">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <div class="form-grid">
+            <div class="field-container">{{ form.first_name.label_tag }} {{ form.first_name }} {{ form.first_name.errors }}</div>
+            <div class="field-container">{{ form.last_name.label_tag }} {{ form.last_name }} {{ form.last_name.errors }}</div>
+            <div class="field-container">{{ form.email.label_tag }} {{ form.email }} {{ form.email.errors }}</div>
+            <div class="field-container">{{ form.username.label_tag }} {{ form.username }} {{ form.username.errors }}</div>
+            <div class="field-container">{{ form.password.label_tag }} {{ form.password }}<small class="form-text text-muted">{{ form.password.help_text }}</small>{{ form.password.errors }}</div>
+            <div class="field-container">
+                <label>Contact Number</label>
+                <div class="input-group">
+                    {{ form.country_code }}
+                    {{ form.national_number }}
+                </div>
+                {{ form.country_code.errors }}
+                {{ form.national_number.errors }}
+            </div>
+            <div class="field-container full-width">{{ form.address.label_tag }} {{ form.address }} {{ form.address.errors }}</div>
+            <div class="field-container">{{ form.date_of_birth.label_tag }} {{ form.date_of_birth }} {{ form.date_of_birth.errors }}</div>
+            <div class="field-container full-width">
+                {{ form.groups.label_tag }}
+                <div class="role-checkbox-list">
+                    {{ form.groups }}
+                </div>
+                {{ form.groups.errors }}
+            </div>
+            
+            <div class="field-container doctor-fields" style="display: none;">{{ form.specialization.label_tag }} {{ form.specialization }} {{ form.specialization.errors }}</div>
+            <div class="field-container doctor-fields" style="display: none;">{{ form.credentials.label_tag }} {{ form.credentials }} {{ form.credentials.errors }}</div>
+
+            <div class="field-container">
+                <label for="{{ form.is_active.id_for_label }}" class="form-check-label">{{ form.is_active }} {{ form.is_active.label }}</label>
+                <small class="form-text text-muted">{{ form.is_active.help_text }}</small>
+                {{ form.is_active.errors }}
+            </div>
+        </div>
+
+        <div class="main-actions-bar">
+            <a href="{% url 'staff:staff_list' %}" class="button button-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+            <button type="submit" class="button button-success">
+                <i class="fas fa-save"></i> Save Staff Member
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+.full-width { grid-column: 1 / -1; }
+.role-checkbox-list ul { list-style: none; padding: 0; columns: 2; }
+.role-checkbox-list li { display: block; }
+.input-group { display: flex; gap: 10px; }
+.input-group select { flex: 1; }
+.input-group input { flex: 2; }
+.errorlist { color: var(--danger-color); font-size: 0.9em; padding-left: 0; list-style-type: none; margin-top: 5px; }
+</style>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const rolesContainer = document.querySelector('.role-checkbox-list');
+    const doctorFields = document.querySelectorAll('.doctor-fields');
+    let doctorCheckbox;
+    
+    // Find the 'Doctors' checkbox
+    rolesContainer.querySelectorAll('label').forEach(label => {
+        if (label.innerText.trim() === 'Doctors') {
+            doctorCheckbox = label.querySelector('input');
+        }
+    });
+
+    function toggleDoctorFields() {
+        if (doctorCheckbox) {
+            const show = doctorCheckbox.checked;
+            doctorFields.forEach(field => {
+                field.style.display = show ? 'block' : 'none';
+            });
+        }
+    }
+
+    if (doctorCheckbox) {
+        rolesContainer.addEventListener('change', toggleDoctorFields);
+        toggleDoctorFields(); // Initial check on page load
+    }
+});
+</script>
+{% endblock %}

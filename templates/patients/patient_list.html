@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    <i class="fas fa-users"></i> {{ page_title }}
+{% endblock title %}
+
+{% block content %}
+<div class="detail-card">
+    <div class="detail-card-header">
+        <h3>
+            <i class="fas fa-users"></i> {{ page_title }}
+        </h3>
+        <div class="header-actions">
+            <a href="{% url 'patients:add_patient' %}" class="button button-primary">
+                <i class="fas fa-plus"></i> Add New Patient
+            </a>
+        </div>
+    </div>
+
+    <div class="page-actions" style="display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <form method="GET" action="{% url 'patients:patient_list' %}" class="form-inline" style="display: flex; gap: 10px;">
+            <input type="text" name="q" class="form-control" placeholder="Search by name or contact..." value="{{ search_query|default:'' }}" style="width: 250px;">
+            <button type="submit" class="button button-secondary">
+                <i class="fas fa-search"></i> Search
+            </button>
+            {% if search_query %}
+                <a href="{% url 'patients:patient_list' %}" class="button button-secondary-outline">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+            {% endif %}
+        </form>
+    </div>
+
+    {% if patients_list %}
+        {% if search_query %}
+            <p>
+                <i class="fas fa-search"></i>
+                Showing results for: <strong>"{{ search_query }}"</strong>
+            </p>
+        {% endif %}
+        <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Contact Number</th>
+                    <th>Place</th>
+                    <th>Allergies</th>
+                    <th>Ongoing Conditions</th>
+                    <th>Medications</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for patient in patients_list %}
+                <tr>
+                    <td><a href="{% url 'patients:patient_detail' patient.pk %}">{{ patient.name }}</a></td>
+                    <td>{{ patient.age }}</td>
+                    <td>{{ patient.get_gender_display }}</td>
+                    <td>{{ patient.contact_number|default:"N/A" }}</td>
+                    <td>{{ patient.place|default:"N/A" }}</td>
+                    <td>{{ patient.allergies|truncatewords:5|default:"N/A" }}</td>
+                    <td>{{ patient.ongoing_conditions|truncatewords:5|default:"N/A" }}</td>
+                    <td>{{ patient.medications|truncatewords:5|default:"N/A" }}</td>
+                    <td class="actions-column">
+                        <a href="{% url 'patients:edit_patient' patient.pk %}" class="button button-warning" style="margin-right: 5px;">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <a href="{% url 'patients:delete_patient' patient.pk %}" class="button button-danger">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    {% else %}
+        {% if search_query %}
+            <p class="no-items">
+                <i class="fas fa-exclamation-circle"></i>
+                No patients found matching your search for "<strong>{{ search_query }}</strong>".
+            </p>
+            <div style="text-align:center; margin-top:20px;">
+                 <a href="{% url 'patients:patient_list' %}" class="button button-secondary">
+                    <i class="fas fa-times"></i> Clear Search and Show All Patients
+                 </a>
+            </div>
+        {% else %}
+            <div class="no-items">
+                <p>
+                    <i class="fas fa-user-slash"></i> No patients found.
+                </p>
+                <p class="text-muted">
+                    <i class="fas fa-plus"></i> Click Add New Patient to get started.
+                </p>
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock content %}

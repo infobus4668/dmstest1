@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block content %}
+<h2>{{ page_title }}</h2>
+<p>Select a report to view.</p>
+
+<div class="info-card-grid">
+    <div class="info-card">
+        <div>
+            <div class="info-card-title">Financial Summary</div>
+            <div class="info-card-value" style="font-size: 1.5em; margin-top: 15px;">Monthly Overview</div>
+        </div>
+        <div class="info-card-action">
+             <a href="{% url 'reporting:financial_summary' %}" class="button button-primary">
+                <i class="fas fa-chart-line"></i> View Report
+             </a>
+        </div>
+    </div>
+    <div class="info-card appointments-today">
+        <div>
+            <div class="info-card-title">Stock Received Report</div>
+            <div class="info-card-value" style="font-size: 1.5em; margin-top: 15px;">Track incoming inventory.</div>
+        </div>
+        <div class="info-card-action">
+             <a href="{% url 'reporting:stock_received_report' %}" class="button button-info">
+                <i class="fas fa-truck-loading"></i> View Report
+             </a>
+        </div>
+    </div>
+    <div class="info-card appointments-week">
+        <div>
+            <div class="info-card-title">Supplier Payment Report</div>
+            <div class="info-card-value" style="font-size: 1.5em; margin-top: 15px;">Track payments to suppliers.</div>
+        </div>
+        <div class="info-card-action">
+             <a href="{% url 'reporting:supplier_payment_report' %}" class="button button-primary" style="background-color: var(--purple-color);">
+                <i class="fas fa-money-check-alt"></i> View Report
+             </a>
+        </div>
+    </div>
+    <div class="info-card lab-cases">
+        <div>
+            <div class="info-card-title">Lab Cases Report</div>
+            <div class="info-card-value" style="font-size: 1.5em; margin-top: 15px;">Track cases sent to labs.</div>
+        </div>
+        <div class="info-card-action">
+             <a href="{% url 'reporting:lab_cases_report' %}" class="button" style="background-color: var(--orange-color);">
+                <i class="fas fa-flask"></i> View Report
+             </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

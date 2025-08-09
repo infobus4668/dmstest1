@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block content %}
+<div class="detail-card" style="max-width: 600px; margin: 40px auto; text-align: center;">
+    <h2 style="color: var(--danger-color);">{{ page_title }}</h2>
+    <p>Are you sure you want to delete the supplier: <strong>"{{ supplier.name }}"</strong>?</p>
+    <p style="font-weight: bold; color: var(--danger-color);">This action cannot be undone.</p>
+    
+    <div class="main-actions-bar" style="justify-content: center; border-top: none;">
+        <a href="{% url 'billing:supplier_list' %}" class="button button-secondary">Cancel</a>
+        <form method="post" style="margin: 0;">
+            {% csrf_token %}
+            <button type="submit" class="button button-danger">Yes, Delete</button>
+        </form>
+    </div>
+</div>
+{% endblock content %}

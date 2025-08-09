@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title|default:"Add New Patient" }}{% endblock title %}
+
+{% block content %}
+<div class="detail-card" style="max-width: 900px; margin: 20px auto;">
+    <div class="detail-card-header">
+        <h3>{{ page_title|default:"Add New Patient" }}</h3>
+    </div>
+
+    <form method="POST" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="messages error" style="list-style-type: none; padding-left: 0;">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <div class="form-grid">
+            <div class="field-container">{{ form.name.label_tag }} {{ form.name }} {{ form.name.errors }}</div>
+            <div class="field-container">{{ form.date_of_birth.label_tag }} {{ form.date_of_birth }} {{ form.date_of_birth.errors }}</div>
+
+            <div class="field-container">{{ form.gender.label_tag }} {{ form.gender }} {{ form.gender.errors }}</div>
+            <div class="field-container">
+                <label>Contact Number</label>
+                <div class="input-group">
+                    {{ form.country_code }}
+                    {{ form.national_number }}
+                </div>
+                {{ form.country_code.errors }}
+                {{ form.national_number.errors }}
+            </div>
+
+            <div class="field-container">{{ form.place.label_tag }} {{ form.place }} {{ form.place.errors }}</div>
+            <div class="field-container">{{ form.pincode.label_tag }} {{ form.pincode }} {{ form.pincode.errors }}</div>
+
+            <div class="field-container full-width">{{ form.allergies.label_tag }} {{ form.allergies }} {{ form.allergies.errors }}</div>
+            <div class="field-container full-width">{{ form.ongoing_conditions.label_tag }} {{ form.ongoing_conditions }} {{ form.ongoing_conditions.errors }}</div>
+            <div class="field-container full-width">{{ form.medications.label_tag }} {{ form.medications }} {{ form.medications.errors }}</div>
+        </div>
+
+        <div class="main-actions-bar">
+            <a href="{% url 'patients:patient_list' %}" class="button button-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Patient List
+            </a>
+            <button type="submit" class="button button-success">
+                <i class="fas fa-save"></i> Save Patient
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+.full-width { grid-column: 1 / -1; }
+.input-group { display: flex; gap: 10px; }
+.input-group select { flex: 1; }
+.input-group input { flex: 2; }
+.errorlist { color: var(--danger-color); font-size: 0.9em; padding-left: 0; list-style-type: none; margin-top: 5px; }
+</style>
+{% endblock content %}

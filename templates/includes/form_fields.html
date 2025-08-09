@@ -1,0 +1,33 @@
+{% for field in form %}
+  <div class="mb-3">
+    {% if field.name == 'country_code' %}
+      <label for="{{ form.country_code.id_for_label }}" class="form-label">Phone Number</label>
+      <div class="input-group">
+        {{ form.country_code }}
+        {{ form.national_number }}
+      </div>
+      {% if form.country_code.errors or form.national_number.errors %}
+        <div class="invalid-feedback d-block">
+          {{ form.country_code.errors|striptags }}
+          {{ form.national_number.errors|striptags }}
+          {{ form.non_field_errors|striptags }}
+        </div>
+      {% endif %}
+    {% elif field.name == 'national_number' %}
+      {# This field is now rendered with country_code, so we skip it here to avoid duplication. #}
+    {% else %}
+      <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}
+        <div class="invalid-feedback d-block">
+          {{ field.errors|striptags }}
+        </div>
+      {% endif %}
+    {% endif %}
+    {% if field.help_text %}
+      <small class="form-text text-muted">{{ field.help_text }}</small>
+    {% endif %}
+  </div>
+{% endfor %}
+{# Add icon to submit button if this template is used for form rendering with a submit button, e.g.: #}
+{# <button type="submit" class="button button-primary"><i class="fas fa-save"></i> Submit</button> #}

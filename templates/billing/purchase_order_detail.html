@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}Purchase Order #{{ po.pk }}{% endblock title %}
+
+{% block extra_head %}
+<style>
+    .empty-state-card {
+        text-align: center;
+        padding: 40px 20px;
+        background-color: #f8f9fa;
+        border: 1px dashed #dee2e6;
+        border-radius: 8px;
+    }
+    .empty-state-card .icon {
+        font-size: 3rem;
+        color: #ced4da;
+        margin-bottom: 1rem;
+    }
+    .empty-state-card h4 {
+        color: #6c757d;
+    }
+    .empty-state-card p {
+        color: #6c757d;
+        margin-bottom: 1.5rem;
+    }
+    .batch-card-new {
+        background: #fff;
+        border: 1px solid #e3e7ed;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+    .batch-header-new {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        border-bottom: 1px solid #e3e7ed;
+    }
+    .batch-header-new .header-item {
+        padding: 10px 15px;
+    }
+    .batch-header-new .header-item span {
+        display: block;
+        font-size: 0.8em;
+        color: #6c757d;
+        margin-bottom: 2px;
+    }
+    .batch-header-new .header-item strong {
+        font-size: 1em;
+        color: #333;
+    }
+    .batch-body-new {
+        padding: 15px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 30px;
+    }
+    .batch-body-new p {
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.9em;
+        border-bottom: 1px dotted #eee;
+        padding-bottom: 8px;
+    }
+    .batch-body-new p strong {
+        color: #555;
+    }
+    .text-success {
+        color: #28a745 !important;
+    }
+    .text-danger {
+        color: #dc3545 !important;
+    }
+</style>
+
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="details-header-card">
+        <div class="patient-info">
+            <h2><i class="fas fa-file-invoice"></i> Purchase Order #{{ po.pk }}</h2>
+            <p>From Supplier: <strong>{{ po.supplier.name }}</strong></p>
+        </div>
+        <div class="header-actions">
+            {% if can_edit_po %}
+                <a href="{% url 'billing:edit_purchase_order' po.pk %}" class="button button-warning">
+                    <i class="fas fa-edit"></i> Edit Order
+                </a>
+            {% endif %}
+            {% if po.status != 'COMPLETED' and po.status != 'CANCELLED' %}
+                <a href="{% url 'billing:receive_purchase_order' po.pk %}" class="button button-success">
+                    <i class="fas fa-truck-loading"></i> Receive Stock
+                </a>
+            {% endif %}
+            {% if po.balance_due > 0 %}
+                <a href="{% url 'billing:add_supplier_payment' po.pk %}" class="button button-primary">
+                    <i class="fas fa-credit-card"></i> Add Payment
+                </a>
+            {% endif %}
+            {% if can_cancel_po %}
+                <form action="{% url 'billing:cancel_purchase_order' po.pk %}" method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to cancel this order?');">
+                    {% csrf_token %}
+                    <button type="submit" class="button button-danger">
+                        <i class="fas fa-ban"></i> Cancel Order
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="details-grid">
+        <div class="main-details">
+            <div class="detail-card" style="margin-bottom: 24px;">
+                <div class="detail-card-header"><h3><i class="fas fa-list-ol"></i> Ordered Items Summary</h3></div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Product Variant</th>
+                                <th class="text-center">Ordered</th>
+                                <th class="text-center">Received</th>
+                                <th class="text-center">Returned</th>
+                                <th class="text-center">Replaced</th>
+                                <th class="text-center">Available Stock</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for data in items_with_details %}
+                            <tr>
+                                <td>{{ data.item.product_variant }}</td>
+                                <td class="text-center">{{ data.item.quantity }}</td>
+                                <td class="text-center">{{ data.item.quantity_received }}</td>
+                                <td class="text-center">{{ data.total_returned }}</td>
+                                <td class="text-center">{{ data.total_replaced }}</td>
+                                <td class="text-center" style="font-weight: bold;">{{ data.total_available }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="detail-card" style="margin-bottom: 24px;">
+                <div class="detail-card-header"><h3><i class="fas fa-boxes"></i> Received Batches</h3></div>
+                {% if original_batches %}
+                    {% for batch in original_batches %}
+                    <div class="batch-card-new">
+                        <div class="batch-header-new">
+                            <div class="header-item" style="background-color: #e6f7ff;">
+                                <span>Product Variant</span>
+                                <strong>{{ batch.product_variant }}</strong>
+                            </div>
+                            <div class="header-item" style="background-color: #f6ffed;">
+                                 <span>Batch Number</span>
+                                 <strong>{{ batch.batch_number|default:"N/A" }}</strong>
+                            </div>
+                            <div class="header-item" style="background-color: #fffbe6;">
+                                 <span>Date Received</span>
+                                 <strong>{{ batch.date_received|date:"d M Y, P" }}</strong>
+                            </div>
+                            <div class="header-item" style="background-color: #fff1f0;">
+                                 <span>Expiry Date</span>
+                                 <strong>{{ batch.expiry_date|date:"M Y"|default:"N/A" }}</strong>
+                            </div>
+                        </div>
+                        <div class="batch-body-new">
+                            <div class="details-column">
+                                <p><strong>Quantity Received:</strong> <span>{{ batch.quantity }}</span></p>
+                                <p><strong>Returned Quantity:</strong> <span>{{ batch.quantity_returned }}</span></p>
+                                <p><strong>Replaced Quantity:</strong> <span>{{ batch.quantity_replaced }}</span></p>
+                                <p><strong>Available Quantity:</strong> <span style="font-weight: bold; color: #28a745;">{{ batch.quantity_available }}</span></p>
+                                <p><strong>MRP:</strong> <span>₹{{ batch.mrp|floatformat:2 }}</span></p>
+                                <p><strong>Base Cost:</strong> <span>₹{{ batch.base_cost_price|floatformat:2 }}</span></p>
+                            </div>
+                            <div class="details-column">
+                                <p><strong>Discount (%):</strong> <span>{{ batch.discount_percentage|floatformat:2 }}%</span></p>
+                                <p><strong>Discount (₹):</strong> <span>₹{{ batch.discount_amount|floatformat:2 }}</span></p>
+                                <p><strong>GST (%):</strong> <span>{{ batch.gst_percentage|floatformat:2 }}%</span></p>
+                                <p><strong>Final Cost/Unit:</strong> <span>₹{{ batch.cost_price|floatformat:2 }}</span></p>
+                                <p><strong>Total Cost:</strong> <span style="font-weight: bold;">₹{{ batch.total_cost|floatformat:2 }}</span></p>
+                                <p><strong>Refunded Amount:</strong> <span style="color: #dc3545;">- ₹{{ batch.total_refunded_amount|floatformat:2 }}</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state-card">
+                        <div class="icon"><i class="fas fa-box-open"></i></div>
+                        <h4>No Stock Received Yet</h4>
+                        <p>The inventory for this order has not been updated. Click below to receive stock.</p>
+                        <a href="{% url 'billing:receive_purchase_order' po.pk %}" class="button button-success">
+                            <i class="fas fa-truck-loading"></i> Receive Stock
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="side-details">
+            <div class="detail-card" style="margin-bottom: 24px;">
+                <div class="detail-card-header"><h3><i class="fas fa-calculator"></i> Financial Summary</h3></div>
+                <div class="detail-item--grid"><strong>Total Value</strong><p>₹{{ po.grand_total|floatformat:2 }}</p></div>
+                <div class="detail-item--grid"><strong>Total Discount</strong><p>- ₹{{ po.total_discount|floatformat:2 }}</p></div>
+                <div class="detail-item--grid"><strong>Amount Credited</strong><p>- ₹{{ po.amount_credited|floatformat:2 }}</p></div>
+                <div class="detail-item--grid"><strong>Amount Paid</strong><p>- ₹{{ po.amount_paid|floatformat:2 }}</p></div>
+                <div class="detail-item--grid {% if po.balance_due < 0 %}text-success{% elif po.balance_due > 0 %}text-danger{% endif %}"
+                style="font-size: 1.2em; font-weight: 700; border-top: 1px solid #eee; margin-top: 1rem; padding-top: 1rem;"> <strong>{% if po.balance_due < 0 %}Credit Available{% else %}Balance Due{% endif %}</strong>
+                <p>₹{{ po.balance_due|floatformat:2 }}</p>
+            </div>
+            </div>
+            <div class="detail-card" style="margin-bottom: 24px;">
+                <div class="detail-card-header"><h3><i class="fas fa-info-circle"></i> Order Status</h3></div>
+                <div class="detail-item--grid"><strong>Status</strong><p><span class="status-badge status-{{ po.status }}">{{ po.get_status_display }}</span></p></div>
+                <div class="detail-item--grid"><strong>Order Date</strong><p>{{ po.order_date|date:"d M Y, P" }}</p></div>
+            </div>
+            
+            <div class="detail-card" style="margin-bottom: 24px;">
+                <div class="detail-card-header"><h3><i class="fas fa-receipt"></i> Transaction History</h3></div>
+                 {% if po.payments.all or po.credit_applications.all %}
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Details</th>
+                                    <th class="text-end">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in po.payments.all %}
+                                <tr>
+                                    <td>{{ payment.payment_date|date:"d M Y" }}</td>
+                                    <td>Payment - {{ payment.get_payment_method_display }}</td>
+                                    <td class="text-end">₹{{ payment.amount|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                                {% for app in po.credit_applications.all %}
+                                <tr>
+                                    <td>{{ app.date_applied|date:"d M Y, P" }}</td>
+                                    <td>Applied from Credit Note #{{ app.credit.id }}</td>
+                                    <td class="text-end">- ₹{{ app.amount_applied|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="no-items">No payments or credits recorded.</p>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+
+    <div class="main-actions-bar">
+        <a href="{% url 'billing:purchase_order_list' %}" class="button button-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Purchase Orders
+        </a>
+    </div>
+</div>
+{% endblock content %}

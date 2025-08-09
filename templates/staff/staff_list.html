@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Staff Management{% endblock title %}
+
+{% block content %}
+<div class="detail-card">
+    <div class="detail-card-header">
+        <h3>Staff Management</h3>
+        <div class="header-actions">
+            <a href="{% url 'staff:add_staff_member' %}" class="button button-primary">
+                <i class="fas fa-plus"></i> Add New Staff
+            </a>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Username</th>
+                    <th>Age</th>
+                    <th>Roles</th>
+                    <th>Contact Number</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for staff_member in staff_members %}
+                <tr>
+                    <td>
+                        <strong>{{ staff_member }}</strong>
+                    </td>
+                    <td>{{ staff_member.user.username }}</td>
+                    <td>{{ staff_member.age|default:"N/A" }}</td>
+                    <td>
+                        {% for group in staff_member.user.groups.all %}
+                            <span class="status-badge status-CNF" style="margin-right: 5px;">{{ group.name }}</span>
+                        {% empty %}
+                            <span class="status-badge status-CANCELLED">No Roles</span>
+                        {% endfor %}
+                    </td>
+                    <td>{{ staff_member.contact_number|default:"N/A" }}</td>
+                    <td>{{ staff_member.user.email|default:"N/A" }}</td>
+                    <td>
+                        {% if staff_member.is_active %}
+                            <span class="status-badge status-CMP">Active</span>
+                        {% else %}
+                            <span class="status-badge status-CANCELLED">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'staff:edit_staff_member' pk=staff_member.pk %}" class="button button-warning" style="margin-right: 5px;">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <a href="{% url 'staff:delete_staff_member' pk=staff_member.pk %}" class="button button-danger">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="no-items">
+                        <p>No staff members found.</p>
+                        <p class="text-muted">Click <i class="fas fa-plus"></i> Add New Staff to get started.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock content %}

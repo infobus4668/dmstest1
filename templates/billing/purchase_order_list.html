@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block extra_head %}
+<style>
+    #po-filter-form {
+        display: flex;
+        align-items: center; 
+        gap: 20px; 
+    }
+    #po-filter-form > div {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    #po-filter-form label {
+        margin-bottom: 0; 
+        font-weight: 600;
+        color: #6c757d;
+    }
+    #po-filter-form .select2-container {
+        min-width: 220px;
+    }
+    #po-filter-form select {
+        width: auto;
+    }
+    #po-filter-form .filter-buttons {
+        margin-left: auto; 
+        display: flex;
+        gap: 10px;
+    }
+    .balance-credit {
+        color: #28a745 !important;
+    }
+    .balance-debt {
+        color: #dc3545 !important;
+    }
+</style>
+{% endblock extra_head %}
+
+{% block content %}
+<div class="detail-card">
+    <div class="detail-card-header">
+        <h3>{{ page_title }}</h3>
+        <div class="header-actions">
+            <a href="{% url 'billing:create_purchase_order' %}" class="button button-primary">
+                <i class="fas fa-plus"></i> Create New Order
+            </a>
+            <a href="{% url 'billing:inventory_list' %}" class="button button-secondary">
+                <i class="fas fa-boxes"></i> Back to Inventory
+            </a>
+        </div>
+    </div>
+
+    <div class="detail-card" style="margin-bottom: 30px; padding: 20px;">
+        <form method="get" id="po-filter-form">
+            <div>
+                {{ filter_form.supplier.label_tag }}
+                {{ filter_form.supplier }}
+            </div>
+            <div>
+                {{ filter_form.status.label_tag }}
+                {{ filter_form.status }}
+            </div>
+            <div class="filter-buttons">
+                <button type="submit" class="button button-primary">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+                <a href="{% url 'billing:purchase_order_list' %}" class="button button-secondary">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    {% if purchase_orders_list %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>PO #</th>
+                    <th>Supplier</th>
+                    <th>Order Date</th>
+                    <th>Items</th>
+                    {# --- FIX: ADD NEW TABLE HEADERS --- #}
+                    <th class="text-center">Ordered Qty</th>
+                    <th class="text-center">Received Qty</th>
+                    {# --- END OF FIX --- #}
+                    <th class="text-center">Outstanding</th>
+                    <th class="text-right">Total</th>
+                    <th class="text-right">Paid</th>
+                    <th class="text-right">Balance</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for po in purchase_orders_list %}
+                <tr>
+                    <td><a href="{% url 'billing:purchase_order_detail' po.pk %}">#{{ po.pk }}</a></td>
+                    <td>{{ po.supplier.name }}</td>
+                    <td>{{ po.order_date|date:"M d, Y" }}</td>
+                    <td class="text-center">{{ po.items.count }}</td>
+                    
+                    {# --- FIX: ADD NEW TABLE CELLS --- #}
+                    <td class="text-center">{{ po.total_ordered }}</td>
+                    <td class="text-center">{{ po.total_received }}</td>
+                    {# --- END OF FIX --- #}
+
+                    <td class="text-center">{{ po.outstanding_items }}</td>
+                    <td class="text-right">₹{{ po.grand_total|floatformat:2 }}</td>
+                    <td class="text-right">₹{{ po.amount_paid|floatformat:2 }}</td>
+                    <td class="text-right {% if po.balance_due < 0 %}balance-credit{% elif po.balance_due > 0 %}balance-debt{% endif %}" style="font-weight: bold;">
+                        ₹{{ po.balance_due|floatformat:2 }}
+                    </td>
+                    <td><span class="status-badge status-{{ po.status }}">{{ po.get_status_display }}</span></td>
+                    <td class="actions-column">
+                        <a href="{% url 'billing:purchase_order_detail' po.pk %}" class="button button-info btn-sm">
+                            <i class="fas fa-eye"></i> Details
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <p class="no-items">No purchase orders found matching your criteria.</p>
+    {% endif %}
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    $(document).ready(function() {
+        $('.select2-enable').select2({
+            placeholder: "Select an option",
+            allowClear: true,
+            theme: "classic",
+            width: 'resolve'
+        });
+    });
+</script>
+{% endblock %}

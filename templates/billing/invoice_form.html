@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block content %}
+<form method="POST" id="invoice-form">
+    <div class="details-header-card">
+        <div class="patient-info">
+             <h2>{{ page_title }}</h2>
+        </div>
+    </div>
+
+    {% csrf_token %}
+    <div class="details-grid-block">
+        <div class="main-details">
+            <div class="detail-card">
+                <div class="detail-card-header"><h3>Invoice Details</h3></div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                    {% for field in invoice_form %}
+                        <div class="field-container">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <h3>Invoice Items</h3>
+                </div>
+                <div id="invoice-items-container">
+                    {{ formset.management_form }}
+                    {% for form in formset %}
+                        <div class="formset-row invoice-item-card">
+                            {% for hidden_field in form.hidden_fields %}{{ hidden_field }}{% endfor %}
+                            <div style="display:none;">{{ form.DELETE }}</div>
+                            <div class="invoice-row-grid">
+                                <div class="field-container service-cell">{{ form.service.label_tag }}{{ form.service }}</div>
+                                <div class="field-container product-cell">{{ form.product_variant.label_tag }}{{ form.product_variant }}</div>
+                                <div class="field-container stock-cell">{{ form.stock_item.label_tag }}{{ form.stock_item }}</div>
+                                <div class="field-container desc-cell">{{ form.description.label_tag }}{{ form.description }}</div>
+                                <div class="field-container qty-cell">{{ form.quantity.label_tag }}{{ form.quantity }}</div>
+                                <div class="field-container price-cell">{{ form.unit_price.label_tag }}{{ form.unit_price }}</div>
+                                <div class="field-container discount-cell">{{ form.discount.label_tag }}{{ form.discount }}</div>
+                                <div class="field-container remove-btn-cell">
+                                    <button type="button" class="remove-row-btn button button-danger"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+                    <button type="button" class="add-row-button button button-primary" id="add-item-button">
+                        <i class="fas fa-plus"></i> Add Item
+                    </button>
+                </div>
+
+                <template id="empty-form-template">
+                    <div class="formset-row invoice-item-card">
+                        {% for hidden_field in formset.empty_form.hidden_fields %}{{ hidden_field }}{% endfor %}
+                        <div style="display:none;">{{ formset.empty_form.DELETE }}</div>
+                        <div class="invoice-row-grid">
+                            <div class="field-container service-cell">{{ formset.empty_form.service.label_tag }}{{ formset.empty_form.service }}</div>
+                            <div class="field-container product-cell">{{ formset.empty_form.product_variant.label_tag }}{{ formset.empty_form.product_variant }}</div>
+                            <div class="field-container stock-cell">{{ formset.empty_form.stock_item.label_tag }}{{ formset.empty_form.stock_item }}</div>
+                            <div class="field-container desc-cell">{{ formset.empty_form.description.label_tag }}{{ formset.empty_form.description }}</div>
+                            <div class="field-container qty-cell">{{ formset.empty_form.quantity.label_tag }}{{ formset.empty_form.quantity }}</div>
+                            <div class="field-container price-cell">{{ formset.empty_form.unit_price.label_tag }}{{ formset.empty_form.unit_price }}</div>
+                            <div class="field-container discount-cell">{{ formset.empty_form.discount.label_tag }}{{ formset.empty_form.discount }}</div>
+                            <div class="field-container remove-btn-cell">
+                                <button type="button" class="remove-row-btn button button-danger"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <div class="live-summary-footer">
+        <div class="summary-item">
+            <strong>Subtotal:</strong>
+            <span id="summary-subtotal">₹0.00</span>
+        </div>
+        <div class="summary-item">
+            <strong>Total Discount:</strong>
+            <span id="summary-discount">₹0.00</span>
+        </div>
+        <div class="summary-item summary-item-net">
+            <strong>Net Amount:</strong>
+            <span id="summary-net">₹0.00</span>
+        </div>
+    </div>
+
+    <div class="main-actions-bar">
+        {% if object %}
+            <a href="{% url 'billing:invoice_detail' pk=object.pk %}" class="button button-secondary"><i class="fas fa-times"></i> Cancel</a>
+        {% else %}
+             <a href="{% url 'billing:invoice_list' %}" class="button button-secondary"><i class="fas fa-arrow-left"></i> Back to Invoice List</a>
+        {% endif %}
+        <button type="submit" class="button button-success">
+            {% if object %}<i class="fas fa-save"></i> Save Changes{% else %}<i class="fas fa-check"></i> Create Invoice{% endif %}
+        </button>
+    </div>
+</form>
+{% endblock content %}
+
+{% block extra_js %}
+{{ block.super }}
+<style>
+/* ... other styles from previous fix ... */
+.details-grid-block { 
+    display: block;
+    margin-bottom: 120px;
+}
+.invoice-item-card { 
+    background: #fafbfc; 
+    border: 1px solid #e3e7ed; 
+    border-radius: 8px; 
+    margin-bottom: 1rem; 
+    padding: 1.25rem; 
+    position: relative;
+}
+.invoice-row-grid { 
+    display: grid;
+    grid-template-columns: 1.5fr 1.5fr 1.5fr 2fr 0.6fr 0.8fr 0.8fr 0.4fr;
+    gap: 1rem; 
+    align-items: flex-start;
+}
+.remove-btn-cell {
+    padding-top: 1.75rem;
+}
+.stock-cell {
+    visibility: hidden;
+    transition: visibility 0.1s;
+}
+.stock-cell.visible {
+    visibility: visible;
+}
+</style>
+<script type="text/javascript">
+$(document).ready(function() {
+    const itemData = JSON.parse('{{ js_data|escapejs }}');
+    const container = $('#invoice-items-container');
+    const totalFormsInput = $('#id_items-TOTAL_FORMS');
+    const template = $('#empty-form-template').html();
+    const invoiceDiscountInput = $('#id_discount');
+
+    function updateLiveSummary() {
+        let subtotal = 0;
+        let itemDiscountTotal = 0;
+        $('.formset-row').each(function() {
+            const row = $(this);
+            const isDeleted = row.find('input[name$="-DELETE"]').is(':checked');
+            if (!isDeleted && row.is(":visible")) {
+                const qty = parseFloat(row.find('input[name$="-quantity"]').val()) || 0;
+                const price = parseFloat(row.find('input[name$="-unit_price"]').val()) || 0;
+                const discount = parseFloat(row.find('input[name$="-discount"]').val()) || 0;
+                subtotal += qty * price;
+                itemDiscountTotal += qty * discount;
+            }
+        });
+        const invoiceDiscount = parseFloat(invoiceDiscountInput.val()) || 0;
+        const totalDiscount = itemDiscountTotal + invoiceDiscount;
+        const netAmount = subtotal - totalDiscount;
+        $('#summary-subtotal').text('₹' + subtotal.toFixed(2));
+        $('#summary-discount').text('₹' + totalDiscount.toFixed(2));
+        $('#summary-net').text('₹' + netAmount.toFixed(2));
+    }
+
+    function initializeRow(row) {
+        // The definitive fix for the "not clickable" issue
+        row.find('.invoice-item-select').select2({
+            width: '100%',
+            dropdownParent: row.closest('.invoice-item-card')
+        });
+        
+        const serviceSelect = row.find('select[name$="-service"]');
+        const productVariantSelect = row.find('select[name$="-product_variant"]');
+        const stockCell = row.find('.stock-cell');
+        const stockItemSelect = row.find('select[name$="-stock_item"]');
+        const descInput = row.find('input[name$="-description"]');
+        const priceInput = row.find('input[name$="-unit_price"]');
+        const quantityInput = row.find('input[name$="-quantity"]');
+
+        row.on('input change', 'input, select', updateLiveSummary);
+
+        serviceSelect.on('change', function() {
+            const isServiceSelected = !!$(this).val();
+            productVariantSelect.val(null).trigger('change').prop('disabled', isServiceSelected);
+            stockCell.removeClass('visible');
+            if (isServiceSelected) {
+                const service = itemData.services[$(this).val()];
+                descInput.val(service.name);
+                priceInput.val(service.price);
+            }
+        });
+
+        productVariantSelect.on('change', function() {
+            const isProductSelected = !!$(this).val();
+            serviceSelect.val(null).trigger('change').prop('disabled', isProductSelected);
+            stockCell.toggleClass('visible', isProductSelected);
+            
+            const variantId = $(this).val();
+            stockItemSelect.empty().append('<option value="">Select Batch...</option>').prop('disabled', !variantId);
+            
+            if (variantId && itemData.batches[variantId]) {
+                itemData.batches[variantId].forEach(function(batch) {
+                    const optionText = `${batch.name} (Avail: ${batch.available})`;
+                    const option = new Option(optionText, batch.pk, false, false);
+                    stockItemSelect.append(option);
+                });
+            }
+            stockItemSelect.trigger('change');
+        });
+        
+        stockItemSelect.on('change', function() {
+            const stockId = $(this).val();
+            const variantId = productVariantSelect.val();
+            if (stockId && variantId && itemData.batches[variantId]) {
+                const batch = itemData.batches[variantId].find(b => String(b.pk) === stockId);
+                if (batch) {
+                    priceInput.val(batch.mrp);
+                    quantityInput.attr('max', batch.available);
+                    descInput.val(itemData.products[variantId].name);
+                }
+            } else {
+                if (!serviceSelect.val()){
+                    priceInput.val('');
+                    descInput.val('');
+                }
+            }
+        });
+
+        if (productVariantSelect.val()) {
+            stockCell.addClass('visible');
+        }
+    }
+    
+    // DEFINITIVE FIX: Initialize all dropdowns on the page manually
+    $('.invoice-header-select').select2({ width: '100%' });
+
+    $('#add-item-button').on('click', function() {
+        let formIdx = parseInt(totalFormsInput.val(), 10);
+        const newRowHtml = template.replace(/__prefix__/g, formIdx);
+        const newRow = $(newRowHtml);
+        container.append(newRow);
+        initializeRow(newRow);
+        totalFormsInput.val(formIdx + 1);
+    });
+
+    container.on('click', '.remove-row-btn', function() {
+        const row = $(this).closest('.formset-row');
+        row.hide();
+        row.find('input[name$="-DELETE"]').prop('checked', true);
+        updateLiveSummary();
+    });
+
+    invoiceDiscountInput.on('input', updateLiveSummary);
+
+    container.find('.formset-row').each(function() {
+        initializeRow($(this));
+    });
+
+    updateLiveSummary();
+});
+</script>
+{% endblock extra_js %}

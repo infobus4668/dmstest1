@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block content %}
+<div class="container">
+    <div class="page-actions" style="margin-bottom: 30px;">
+        <h2 style="margin: 0; margin-right: auto;">{{ page_title }}</h2>
+        <a href="{% url 'billing:invoice_detail' pk=invoice.pk %}" class="action-link button-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Invoice
+        </a>
+    </div>
+    <div class="details-grid">
+        <div class="main-details">
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <h3>Record a New Payment</h3>
+                </div>
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% include "includes/form_fields.html" %}
+                    <div class="main-actions-bar" style="justify-content: flex-end;">
+                        <button type="submit" class="button button-primary">
+                            <i class="fas fa-credit-card"></i> Record Payment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="side-details">
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <h3>Payment History & Summary</h3>
+                </div>
+                {% if payments %}
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th class="text-right">Amount</th>
+                                    <th>Method</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in payments %}
+                                <tr>
+                                    <td>{{ payment.payment_date|date:"d M Y" }}</td>
+                                    <td class="text-right">₹{{ payment.amount|floatformat:2 }}</td>
+                                    <td>{{ payment.get_payment_method_display }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="no-items">No payments recorded yet.</p>
+                {% endif %}
+                <div style="border-top: 1px solid var(--border-color); margin-top: 20px; padding-top: 20px;">
+                    <h4 style="margin-top: 0;">Financial Summary</h4>
+                    <div class="detail-item--grid">
+                        <strong>Net Amount</strong>
+                        <p>₹{{ invoice.net_amount|floatformat:2 }}</p>
+                    </div>
+                    <div class="detail-item--grid">
+                        <strong>Total Amount Paid</strong>
+                        <p>- ₹{{ invoice.amount_paid|floatformat:2 }}</p>
+                    </div>
+                    <div class="detail-item--grid" style="font-size: 1.1em; font-weight: 700; color: var(--danger-color); border-top: 1px solid var(--border-color); margin-top: 1rem; padding-top: 1rem;">
+                        <strong>Balance Due</strong>
+                        <p>₹{{ invoice.balance_due|floatformat:2 }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

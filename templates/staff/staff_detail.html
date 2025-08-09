@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Staff Details: {{ staff_member.name }}{% endblock title %}
+
+{% block content %}
+<div class="details-header-card">
+    <div class="patient-info">
+        <h2>{{ staff_member.name }}</h2>
+        <p>
+            {% for group in staff_member.user.groups.all %}
+                <span class="status-badge status-CNF">{{ group.name }}</span>
+            {% endfor %}
+        </p>
+    </div>
+    <div class="header-actions">
+        <a href="{% url 'staff:edit_staff_member' pk=staff_member.pk %}" class="button button-warning">
+            <i class="fas fa-edit"></i> Edit
+        </a>
+        <a href="{% url 'staff:delete_staff_member' pk=staff_member.pk %}" class="button button-danger">
+            <i class="fas fa-trash"></i> Delete
+        </a>
+    </div>
+</div>
+
+<div class="detail-card">
+    <div class="detail-card-header">
+        <h3>Staff Information</h3>
+    </div>
+    <div class="details-grid" style="grid-template-columns: 1fr 1fr;">
+        <div class="detail-item--grid">
+            <strong>Username</strong>
+            <p>{{ staff_member.user.username }}</p>
+        </div>
+        <div class="detail-item--grid">
+            <strong>Email</strong>
+            <p>{{ staff_member.email|default:"Not Provided" }}</p>
+        </div>
+        <div class="detail-item--grid">
+            <strong>Contact Number</strong>
+            <p>{{ staff_member.contact_number|default:"Not Provided" }}</p>
+        </div>
+        <div class="detail-item--grid">
+            <strong>Date Joined</strong>
+            <p>{{ staff_member.date_joined|date:"F d, Y" }}</p>
+        </div>
+        <div class="detail-item--grid">
+            <strong>Date of Birth</strong>
+            <p>{{ staff_member.date_of_birth|date:"F d, Y"|default:"Not Provided" }}</p>
+        </div>
+        <div class="detail-item--grid">
+            <strong>Status</strong>
+            <p>
+                {% if staff_member.is_active %}
+                    <span class="status-badge status-CMP">Active</span>
+                {% else %}
+                    <span class="status-badge status-CANCELLED">Inactive</span>
+                {% endif %}
+            </p>
+        </div>
+        <div class="detail-item--grid" style="grid-column: 1 / -1;">
+            <strong>Address</strong>
+            <p>{{ staff_member.address|default:"Not Provided" }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="main-actions-bar">
+    <a href="{% url 'staff:staff_list' %}" class="button button-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Staff List
+    </a>
+</div>
+{% endblock content %}

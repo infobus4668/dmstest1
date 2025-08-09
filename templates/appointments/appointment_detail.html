@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Appointment for {{ appointment.patient.name }}{% endblock title %}
+
+{% block content %}
+<div class="detail-card">
+    <div class="detail-card-header">
+        <h3>
+            <i class="fas fa-calendar-check" style="margin-right: 8px;"></i>
+            Appointment for {{ appointment.patient.name }}
+        </h3>
+        <div class="header-actions">
+            <a href="{% url 'billing:create_invoice_for_appointment' pk=appointment.pk %}" class="button button-success">
+                <i class="fas fa-file-invoice"></i> Create Invoice
+            </a>
+            <a href="{% url 'dental_records:manage_dental_record' pk=appointment.pk %}" class="button button-primary">
+                <i class="fas fa-notes-medical"></i> Manage Dental Record
+            </a>
+            <a href="{% url 'dental_records:manage_prescription' pk=appointment.pk %}" class="button button-primary">
+                <i class="fas fa-prescription"></i> Manage Prescription
+            </a>
+            <a href="{% url 'lab_cases:add_lab_case_from_appointment' pk=appointment.pk %}" class="button button-primary">
+                <i class="fas fa-flask"></i> Add Lab Case
+            </a>
+            <a href="{% url 'appointments:edit_appointment' pk=appointment.pk %}" class="button button-warning">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+        </div>
+    </div>
+
+    <div class="details-layout" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; width: 100%; margin: 0 0 30px 0; box-sizing: border-box; align-items: stretch;">
+        <div style="display: flex; flex-direction: column; height: 100%;">
+            <div class="detail-card" style="flex: 1 1 0; display: flex; flex-direction: column; height: 100%;">
+                <div class="detail-card-header"><h3>Appointment Details</h3></div>
+                <div class="detail-item--grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; flex: 1;">
+                    <div>
+                        <strong>Patient</strong>
+                        <p><a href="{% url 'patients:patient_detail' pk=appointment.patient.pk %}">{{ appointment.patient.name }}</a> ({{ appointment.patient.age }} years)</p>
+                    </div>
+                    <div>
+                        <strong>Doctor</strong>
+                        <p>Dr. {{ appointment.doctor.name }}</p>
+                    </div>
+                    <div>
+                        <strong>Date & Time</strong>
+                        <p>{{ appointment.appointment_datetime|date:"d-m-Y, h:i A" }}</p>
+                    </div>
+                    <div>
+                        <strong>Status</strong>
+                        <p><span class="status-badge status-{{ appointment.status }}">{{ appointment.get_status_display }}</span></p>
+                    </div>
+                    <div>
+                        <strong>Reason for Visit</strong>
+                        <p>{{ appointment.reason|default:"N/A" }}</p>
+                    </div>
+                    <div>
+                        <strong>Notes</strong>
+                        <div class="record-text">{{ appointment.notes|default:"No notes for this appointment."|linebreaksbr }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="display: flex; flex-direction: column; height: 100%;">
+            <div class="detail-card" style="flex: 1 1 0; display: flex; flex-direction: column; height: 100%;">
+                <div class="detail-card-header"><h3>Prescription</h3></div>
+                <div style="flex: 1; display: flex; flex-direction: column;">
+                {% if appointment.dental_record and appointment.dental_record.prescription %}
+                    <ul>
+                        <li><a href="{% url 'dental_records:manage_prescription' pk=appointment.pk %}">
+                            <i class="fas fa-prescription"></i> Prescription Details
+                        </a></li>
+                    </ul>
+                    <div>
+                        <strong>Drugs:</strong>
+                        <ul>
+                        {% for item in appointment.dental_record.prescription.items.all %}
+                            <li>{{ item.medication_name }} - {{ item.dosage }} - {{ item.frequency }} - {{ item.duration }} {% if item.notes %}({{ item.notes }}){% endif %}</li>
+                        {% empty %}
+                            <li>No drugs prescribed.</li>
+                        {% endfor %}
+                        </ul>
+                        <strong>Notes:</strong>
+                        <div class="record-text">{{ appointment.dental_record.prescription.notes|default:"No notes."|linebreaksbr }}</div>
+                    </div>
+                {% else %}
+                    <p style="font-size: 0.9em; color: var(--text-color-light);">No prescriptions found.</p>
+                {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="associated-records-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 0;">
+        <div class="detail-card">
+            <div class="detail-card-header"><h3>Billing</h3></div>
+            {% if appointment.invoice %}
+                <ul>
+                    <li>
+                        <a href="{% url 'billing:invoice_detail' pk=appointment.invoice.pk %}">
+                            <i class="fas fa-file-invoice"></i> Invoice #{{ appointment.invoice.invoice_number }}
+                        </a> ({{ appointment.invoice.get_status_display }})
+                    </li>
+                </ul>
+            {% else %}
+                <p style="font-size: 0.9em; color: var(--text-color-light);">No invoices found.</p>
+            {% endif %}
+        </div>
+        <div class="detail-card">
+            <div class="detail-card-header"><h3>Dental Records</h3></div>
+            {% if appointment.dental_record %}
+                <ul>
+                    <li>
+                        <a href="{% url 'dental_records:manage_dental_record' pk=appointment.pk %}">
+                            <i class="fas fa-notes-medical"></i> Dental Record Details
+                        </a> | Notes: {{ appointment.dental_record.notes|default:"No notes."|truncatewords:12 }}
+                    </li>
+                </ul>
+            {% else %}
+                <p style="font-size: 0.9em; color: var(--text-color-light);">No dental records found.</p>
+            {% endif %}
+        </div>
+        <div class="detail-card">
+            <div class="detail-card-header"><h3>Lab Cases</h3></div>
+            {% if appointment.labcase_set.exists %}
+                <ul>
+                    {% for lab_case in appointment.labcase_set.all %}
+                    <li>
+                        <a href="{% url 'lab_cases:lab_case_detail' pk=lab_case.pk %}">
+                            <i class="fas fa-flask"></i> Lab Case #{{ lab_case.pk }}
+                        </a> | Status: {{ lab_case.get_status_display }} | Notes: {{ lab_case.notes|default:"No notes."|truncatewords:12 }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p style="font-size: 0.9em; color: var(--text-color-light);">No lab cases found.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="main-actions-bar" style="display: flex; justify-content: flex-end; gap: 10px;">
+        <a href="{% url 'appointments:appointment_list' %}" class="button button-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Appointments
+        </a>
+        <a href="{% url 'appointments:delete_appointment' pk=appointment.pk %}" class="button button-danger">
+            <i class="fas fa-trash"></i> Delete Appointment
+        </a>
+    </div>
+</div>
+{% endblock content %}

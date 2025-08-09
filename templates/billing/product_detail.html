@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header with Actions -->
+    <div class="details-header-card">
+        <div class="patient-info">
+            <h2>{{ product.name }}</h2>
+            <p class="text-muted">Product Overview</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'billing:product_edit' pk=product.pk %}" class="button button-secondary">
+                <i class="fas fa-edit"></i> Edit Product
+            </a>
+            <a href="{% url 'billing:product_delete' pk=product.pk %}" class="button button-danger">
+                <i class="fas fa-trash"></i> Delete Product
+            </a>
+        </div>
+    </div>
+
+    <!-- Product Details Card -->
+    <div class="detail-card mb-4">
+        <div class="detail-card-header">
+            <h3>Product Details</h3>
+        </div>
+        <div class="detail-item--grid">
+            <strong>Category</strong>
+            <p>{{ product.get_category_display }}</p>
+        </div>
+        <div class="detail-item--grid">
+            <strong>Description</strong>
+            <p>{{ product.description|default:"N/A" }}</p>
+        </div>
+    </div>
+
+    <!-- Variant Section Header -->
+    <div class="details-header-card">
+        <div class="patient-info">
+            <h2>Product Variants</h2>
+            <p class="text-muted">Available brands and configurations</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'billing:variant_create' product_pk=product.pk %}" class="button button-primary">
+                <i class="fas fa-plus"></i> Add New Variant
+            </a>
+        </div>
+    </div>
+
+    <!-- Variants Table -->
+    <div class="card">
+        <div class="card-body table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Variant</th>
+                        <th>SKU</th>
+                        <th>Price</th>
+                        <th>Stock</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for variant in product.variants.all %}
+                    <tr>
+                        <td><strong>{{ variant }}</strong></td>
+                        <td>{{ variant.sku|default:"-" }}</td>
+                        <td>₹{{ variant.price|floatformat:2 }}</td>
+                        <td>{{ variant.stock_quantity }}</td>
+                        <td>
+                            <div style="display: flex; gap: 8px;">
+                                <a href="{% url 'billing:variant_edit' pk=variant.pk %}" class="button button-secondary btn-sm">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <a href="{% url 'billing:variant_delete' pk=variant.pk %}" class="button button-danger btn-sm">
+                                    <i class="fas fa-trash"></i> Delete
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">No variants have been created for this product yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Back to Products List Button -->
+    <div class="main-actions-bar">
+        <a href="{% url 'billing:product_list' %}" class="button button-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Products List
+        </a>
+    </div>
+</div>
+{% endblock %}

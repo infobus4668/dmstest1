@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Confirm Delete{% endblock %}
+
+{% block content %}
+<div class="detail-card" style="max-width: 600px; margin: 40px auto; text-align: center;">
+    <h2 style="color: var(--danger-color);">Confirm Deletion</h2>
+    <p>Are you sure you want to delete the variant "<strong>{{ variant }}</strong>"?</p>
+    <p style="font-weight: bold; color: var(--danger-color);">Warning: This cannot be undone.</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="button button-danger">
+            <i class="fas fa-trash"></i> Yes, Delete
+        </button>
+        <a href="{% url 'billing:product_detail' pk=variant.product.pk %}" class="button button-secondary">
+            <i class="fas fa-times"></i> Cancel
+        </a>
+    </form>
+</div>
+{% endblock %}

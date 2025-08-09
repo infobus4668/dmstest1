@@ -1,0 +1,45 @@
+{# DENTALCLINICSYSTEM/templates/registration/login.html #}
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="detail-card" style="max-width: 500px; margin: 40px auto;">
+    <div class="detail-card-header">
+        <h3>Clinic System Login</h3>
+    </div>
+
+    <form method="post" action="{% url 'login' %}">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+            <ul class="messages">
+                {% for error in form.non_field_errors %}
+                    <li class="error">{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <div class="field-container">
+            <label for="id_username">Username</label>
+            <input type="text" name="username" id="id_username" required>
+        </div>
+        <div class="field-container">
+            <label for="id_password">Password</label>
+            <input type="password" name="password" id="id_password" required>
+        </div>
+        
+        <div class="main-actions-bar" style="border-top: none; padding-top: 0;">
+            <button type="submit" class="button button-primary" style="width: 100%;">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </button>
+        </div>
+        <input type="hidden" name="next" value="{{ next }}">
+    </form>
+    <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9em;">
+        <a href="{% url 'password_reset' %}">
+            <i class="fas fa-question-circle"></i> Forgot your password?
+        </a>
+    </p>
+</div>
+{% endblock %}

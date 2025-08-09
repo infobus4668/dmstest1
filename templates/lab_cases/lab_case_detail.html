@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Dental Clinic MS{% endblock title %}
+
+{% block content %}
+
+<div class="details-header-card">
+    <div class="patient-info">
+        <h2>{{ case.case_type }}</h2>
+        <p>For Patient: <a href="{% url 'patients:patient_detail' pk=case.patient.pk %}">{{ case.patient.name }}</a></p>
+    </div>
+    <div class="header-actions">
+        {% if case.balance_due > 0 %}
+            <a href="{% url 'lab_cases:add_lab_payment' case.pk %}" class="button button-success">
+                <i class="fas fa-rupee-sign"></i> Add Payment
+            </a>
+        {% endif %}
+
+        {% if case.amount_paid <= 0 and case.status != 'COMPLETED' and case.status != 'CANCELLED' %}
+            <a href="{% url 'lab_cases:edit_lab_case' case.pk %}" class="button button-warning">
+                <i class="fas fa-edit"></i> Edit Case
+            </a>
+            <a href="{% url 'lab_cases:delete_lab_case' case.pk %}" class="button button-danger" style="margin-left: 5px;">
+                <i class="fas fa-trash"></i> Delete Case
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="details-grid">
+    <div class="main-details">
+        <div class="detail-card">
+            <div class="detail-card-header"><h3>Case Description & Instructions</h3></div>
+            <div class="record-text">
+                {{ case.description|default:"No description provided."|linebreaksbr }}
+            </div>
+        </div>
+
+        <div class="detail-card" style="margin-top: 30px;">
+            <div class="detail-card-header"><h3>Payment History</h3></div>
+            {% if payments %}
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Payment Date</th>
+                            <th>Method</th>
+                            <th class="text-right">Amount</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                        <tr>
+                            <td>{{ payment.payment_date|date:"d M Y, P" }}</td>
+                            <td>{{ payment.get_payment_method_display }}</td>
+                            <td class="text-right">₹{{ payment.amount|floatformat:2 }}</td>
+                            <td>{{ payment.notes|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <p class="no-items">No payments have been recorded for this case.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="side-details">
+        <div class="detail-card">
+            <div class="detail-card-header"><h3>Financial Summary</h3></div>
+            <div class="detail-item--grid">
+                <strong>Cost per Unit</strong>
+                <p style="text-align: right;">₹{{ case.cost_per_unit|floatformat:2 }}</p>
+            </div>
+            <div class="detail-item--grid">
+                <strong>Units</strong>
+                <p style="text-align: right;">{{ case.units }}</p>
+            </div>
+            <div class="detail-item--grid">
+                <strong>Subtotal</strong>
+                <p style="text-align: right;">₹{{ case.subtotal|floatformat:2 }}</p>
+            </div>
+            <div class="detail-item--grid">
+                <strong>GST ({{ case.gst_percentage }}%)</strong>
+                <p style="text-align: right;">+ ₹{{ case.gst_amount|floatformat:2 }}</p>
+            </div>
+            <div class="detail-item--grid" style="font-weight: 600;">
+                <strong>Total Cost</strong>
+                <p style="text-align: right;">₹{{ case.total_cost|floatformat:2 }}</p>
+            </div>
+            <div class="detail-item--grid">
+                <strong>Amount Paid</strong>
+                <p style="text-align: right;">- ₹{{ case.amount_paid|floatformat:2 }}</p>
+            </div>
+            <div class="detail-item--grid" style="font-size: 1.2em; font-weight: 700; color: var(--danger-color); border-top: 2px solid var(--border-color); padding-top: 1rem; margin-top: 1rem;">
+                <strong>Balance Due</strong>
+                <p style="text-align: right;">₹{{ case.balance_due|floatformat:2 }}</p>
+            </div>
+        </div>
+
+        <div class="detail-card" style="margin-top: 30px;">
+            <div class="detail-card-header"><h3>Timeline & Status</h3></div>
+            <div class="detail-item--grid">
+                <strong>Status</strong>
+                <p><span class="status-badge status-{{ case.status }}">{{ case.get_status_display }}</span></p>
+            </div>
+             <div class="detail-item--grid">
+                <strong>Dental Lab</strong>
+                <p>{{ case.lab.name }}</p>
+            </div>
+            <div class="detail-item--grid">
+                <strong>Doctor</strong>
+                <p>{{ case.doctor.name|default:"N/A" }}</p>
+            </div>
+            <div class="detail-item--grid">
+                <strong>Date Sent</strong>
+                <p>{{ case.date_sent|date:"F d, Y"|default:"Not Sent" }}</p>
+            </div>
+            <div class="detail-item--grid">
+                <strong>Date Due</strong>
+                <p style="font-weight: {% if case.is_overdue %}bold{% else %}normal{% endif %}; color: {% if case.is_overdue %}var(--danger-color){% else %}inherit{% endif %};">
+                    {{ case.date_due|date:"F d, Y"|default:"Not Set" }}
+                </p>
+            </div>
+            <div class="detail-item--grid">
+                <strong>Date Received</strong>
+                <p>{{ case.date_received|date:"F d, Y"|default:"Not Received" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-actions-bar">
+    <a href="{% url 'lab_cases:lab_case_list' %}" class="button button-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Lab Case List
+    </a>
+</div>
+{% endblock content %}

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice {{ invoice.invoice_number }}</title>
+    <style>
+        body { font-family: sans-serif; font-size: 10pt; color: #444; }
+        .container { max-width: 800px; margin: auto; padding: 20px; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { margin: 0; color: #0056b3; font-size: 24pt; }
+        .header p { margin: 2px 0; font-size: 9pt; }
+        .invoice-details { display: flex; justify-content: space-between; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ccc;}
+        .invoice-details .patient-info, .invoice-details .invoice-meta { width: 48%; }
+        .invoice-details h2 { font-size: 14pt; margin-top: 0; color: #0056b3; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px;}
+        .invoice-details p { margin: 4px 0; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px;}
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        thead { background-color: #f2f2f2; }
+        .text-right { text-align: right; }
+        .summary { width: 50%; margin-left: 50%; }
+        .summary table { width: 100%; }
+        .summary td { border: none; padding: 4px 8px; }
+        .summary .grand-total { font-weight: bold; font-size: 1.2em; border-top: 2px solid #333; }
+        .footer { text-align: center; margin-top: 30px; font-size: 9pt; color: #888; border-top: 1px solid #ccc; padding-top: 10px;}
+    </style>
+</head>
+<button onclick="window.print()" class="button button-primary" style="position:fixed;bottom:32px;right:32px;z-index:9999;">
+    <i class="fas fa-print"></i> Print
+</button>
+<body onload="window.print()">
+    <div class="container">
+        <div class="header">
+            <h1>{{ CLINIC_NAME }}</h1>
+            <p>{{ CLINIC_ADDRESS }}</p>
+            <p>Phone: {{ CLINIC_PHONE }} | Email: {{ CLINIC_EMAIL }}</p>
+        </div>
+
+        <div class="invoice-details">
+            <div class="patient-info">
+                <h2>Bill To</h2>
+                <p><strong>{{ invoice.patient.name }}</strong></p>
+                <p>Age: {{ invoice.patient.age }}</p>
+                <p>Contact: {{ invoice.patient.contact_number|default:'N/A' }}</p>
+                <p>Place: {{ invoice.patient.place|default:'N/A' }}</p>
+            </div>
+            <div class="invoice-meta">
+                <h2>Invoice Details</h2>
+                <p><strong>Invoice #:</strong> {{ invoice.invoice_number }}</p>
+                <p><strong>Date:</strong> {{ invoice.invoice_date|date:"F d, Y" }}</p>
+                <p><strong>Status:</strong> {{ invoice.get_status_display }}</p>
+                {% if invoice.appointment %}
+                <p><strong>Consulting Doctor:</strong> Dr. {{ invoice.appointment.doctor.name }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Description</th>
+                    <th class="text-right">Unit Price</th>
+                    <th class="text-right">Qty</th>
+                    <th class="text-right">Discount</th>
+                    <th class="text-right">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in invoice.invoice_items.all %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ item.display_description }}</td>
+                    <td class="text-right">₹{{ item.unit_price|floatformat:2 }}</td>
+                    <td class="text-right">{{ item.quantity }}</td>
+                    <td class="text-right">- ₹{{ item.discount|floatformat:2 }}</td>
+                    <td class="text-right">₹{{ item.net_price|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="summary">
+            <table>
+                <tr>
+                    <td>Subtotal:</td>
+                    <td class="text-right">₹{{ invoice.total_amount|floatformat:2 }}</td>
+                </tr>
+                <tr>
+                    <td>Total Discount:</td>
+                    <td class="text-right">- ₹{{ invoice.total_discount|floatformat:2 }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Net Amount:</strong></td>
+                    <td class="text-right"><strong>₹{{ invoice.net_amount|floatformat:2 }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Amount Paid:</td>
+                    <td class="text-right">- ₹{{ invoice.amount_paid|floatformat:2 }}</td>
+                </tr>
+                <tr class="grand-total">
+                    <td>Balance Due:</td>
+                    <td class="text-right">₹{{ invoice.balance_due|floatformat:2 }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="footer">
+            <p>Thank you for choosing our services.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block content %}
+<h2>{{ page_title }}</h2>
+
+<div class="no-items" style="text-align: left; padding: 10px; font-style: normal; margin-bottom: 25px; background-color: #cff4fc; color: #055160; border: 1px solid #b6effb;">
+    <p style="margin:0;"><strong>Patient:</strong> {{ appointment.patient.name }}</p>
+    <p style="margin:0;"><strong>Appointment Date:</strong> {{ appointment.appointment_datetime|date:"F d, Y" }}</p>
+</div>
+
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    <div class="detail-card mb-4">
+        <div class="detail-card-header"><h3>General Notes & Treatments</h3></div>
+        <div class="detail-card-body">
+            <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+                {% for field in form %}
+                    <div class="field-container">
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                        {% for error in field.errors %}<div class="error-message" style="color: var(--danger-color);">{{ error }}</div>{% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="detail-card" style="margin-top: 30px;">
+        <div class="detail-card-header"><h4>Attached Images & X-rays</h4></div>
+        <div class="detail-card-body">
+            {% if images %}
+                <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+                    {% for img in images %}
+                        <div style="border: 1px solid #eee; border-radius: 6px; padding: 10px; width: 180px; text-align: center;">
+                            <a href="{{ img.image.url }}" target="_blank" title="View full image">
+                                <img src="{{ img.image.url }}" alt="Image" style="max-width: 100%; height: 120px; object-fit: cover; display: block; margin: 0 auto 8px auto; border-radius: 4px;">
+                            </a>
+                            {% if img.caption %}<div style="font-size: 0.95em; color: #888; margin-bottom: 6px;">{{ img.caption }}</div>{% endif %}
+                            
+                            <button type="submit" name="delete_image" value="{{ img.pk }}" class="button button-danger" style="width: 100%; padding: 4px 0; font-size: 0.95em;" onclick="return confirm('Are you sure you want to delete this image?');">
+                                <i class="fas fa-trash"></i> Remove
+                            </button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="color: var(--text-color-light); font-size: 0.98em;">No images or x-rays attached.</p>
+            {% endif %}
+
+            <div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
+                <h5>Upload New Image</h5>
+                <p class="text-muted"><small>You can upload an image using the fields below, or by clicking "Save Record" after selecting a file.</small></p>
+                <div style="display: flex; gap: 10px; align-items: flex-end;">
+                    <div>
+                        <label for="id_image">Image File:</label>
+                        <input type="file" name="image" id="id_image" class="form-control">
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="id_caption">Caption (Optional):</label>
+                        <input type="text" name="caption" id="id_caption" class="form-control" placeholder="e.g., Pre-op X-Ray for #14">
+                    </div>
+                    <div>
+                        <button type="submit" name="upload_image" value="true" class="button button-primary">
+                            <i class="fas fa-upload"></i> Upload Image
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-actions-bar">
+        <a href="{% url 'appointments:appointment_detail' appointment.pk %}" class="action-link button-secondary">
+            <i class="fas fa-arrow-left"></i> Cancel
+        </a>
+        <button type="submit" class="button button-success">
+            <i class="fas fa-save"></i> Save Record
+        </button>
+    </div>
+</form>
+{% endblock content %}

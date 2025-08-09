@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Dental Laboratories{% endblock title %}
+
+{% block content %}
+<div class="detail-card">
+    <div class="detail-card-header">
+        <h3>Dental Laboratories</h3>
+        <div class="header-actions">
+            <a href="{% url 'lab_cases:add_lab' %}" class="button button-primary">
+                <i class="fas fa-plus"></i> Add New Lab
+            </a>
+            <a href="{% url 'lab_cases:lab_case_list' %}" class="button button-secondary">
+                <i class="fas fa-flask"></i> Back to Lab Cases
+            </a>
+        </div>
+    </div>
+
+    {% if labs_list %}
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Lab Name</th>
+                        <th>Contact Person</th>
+                        <th>Contact Number</th>
+                        <th>Address</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lab in labs_list %}
+                    <tr>
+                        <td>{{ lab.name }}</td>
+                        <td>{{ lab.contact_person|default:"N/A" }}</td>
+                        <td>{{ lab.contact_number|default:"N/A" }}</td>
+                        <td>{{ lab.address|truncatewords:10|default:"N/A" }}</td>
+                        <td>
+                            {% if lab.is_active %}
+                                <span class="status-badge status-CMP">Active</span>
+                            {% else %}
+                                <span class="status-badge status-CANCELLED">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="actions-column">
+                            <a href="{% url 'lab_cases:edit_lab' lab.pk %}" class="button button-warning" style="margin-right: 5px;">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <a href="{% url 'lab_cases:delete_lab' lab.pk %}" class="button button-danger">
+                                <i class="fas fa-trash"></i> Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="no-items">
+            <p>No dental labs have been added to the system yet.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock content %}

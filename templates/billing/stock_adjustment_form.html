@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block content %}
+<div class="detail-card" style="max-width: 800px; margin: 20px auto;">
+    <div class="detail-card-header">
+        <h3>{{ page_title }}</h3>
+    </div>
+    <p style="color: var(--text-color-light); margin-top: -10px; margin-bottom: 20px;">Use this form to manually correct inventory levels for events like damage or finding uncounted stock.</p>
+    
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <ul class="messages">
+                {% for error in form.non_field_errors %}
+                    <li class="error">{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        
+        {% for field in form %}
+            <div class="field-container">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}
+                    <small style="display: block; margin-top: .25rem; color: var(--text-color-light);">{{ field.help_text }}</small>
+                {% endif %}
+                {{ field.errors }}
+            </div>
+        {% endfor %}
+        
+        <div class="main-actions-bar" style="justify-content: flex-end;">
+            <a href="{% url 'billing:stock_adjustment_list' %}" class="button button-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+            <button type="submit" class="button button-primary">
+                <i class="fas fa-save"></i> Save Adjustment
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block content %}
+<div class="container">
+    <div class="details-header-card">
+        <div class="patient-info">
+            <h2>{{ page_title }}</h2>
+            <p>For items returned from Batch: <strong>{{ purchase_return.stock_item.batch_number }}</strong></p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'billing:return_list' %}" class="button button-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Returns List
+            </a>
+        </div>
+    </div>
+
+    <div class="detail-card" style="max-width: 700px; margin: 20px auto;">
+        <div class="detail-card-header">
+            <h3>Return Summary</h3>
+        </div>
+        <div class="detail-item--grid">
+            <strong>Product:</strong>
+            <p>{{ purchase_return.stock_item.product_variant }}</p>
+        </div>
+        <div class="detail-item--grid" style="border-top: 1px solid #eee; padding-top: 1rem; margin-top: 1rem;">
+            <strong style="color: var(--primary-color);">Quantity to be Refunded:</strong>
+            <p style="font-weight: bold; color: var(--primary-color);">{{ purchase_return.quantity_pending_action }}</p>
+        </div>
+        <div class="detail-item--grid">
+            <strong style="color: var(--primary-color);">Value of Refundable Items:</strong>
+            <p style="font-weight: bold; color: var(--primary-color);">₹{{ purchase_return.value_pending_action|floatformat:2 }}</p>
+        </div>
+    </div>
+
+    <div class="detail-card" style="max-width: 700px; margin: 20px auto;">
+        <div class="detail-card-header">
+            <h3>Record Refund Details</h3>
+        </div>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {% include "includes/form_fields.html" %}
+            <div class="main-actions-bar">
+                <button type="submit" class="button button-success">
+                    <i class="fas fa-check"></i> Record Refund
+                </button>
+                <a href="{% url 'billing:return_list' %}" class="button button-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const amountInput = document.querySelector('#id_amount');
+    const notesInput = document.querySelector('#id_notes');
+    
+    // --- FIX: Wrap Django variable in quotes to make it valid JavaScript ---
+    const costPrice = parseFloat('{{ cost_price|default:"0" }}');
+    const productName = "{{ product_name|escapejs }}";
+    // --- END OF FIX ---
+
+    if (amountInput && notesInput && costPrice > 0) {
+        amountInput.addEventListener('input', function() {
+            const amount = parseFloat(this.value) || 0;
+            const qty = Math.floor(amount / costPrice);
+            notesInput.value = `Refund for ${qty} x ${productName}`;
+        });
+    }
+});
+</script>
+{% endblock extra_js %}

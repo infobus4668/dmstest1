@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Delete Product{% endblock %}
+{% block content %}
+<div class="detail-card" style="max-width: 600px; margin: 40px auto; text-align: center;">
+    <h2 style="color: var(--danger-color);">Delete Product</h2>
+    <p>Are you sure you want to delete the product: <strong>{{ product.name }}</strong>?</p>
+    <p style="font-weight: bold; color: var(--danger-color);">This action cannot be undone.</p>
+    <div class="main-actions-bar" style="justify-content: center; border-top: none;">
+        <form method="post" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="button button-danger">
+                <i class="fas fa-trash"></i> Yes, Delete
+            </button>
+        </form>
+        <a href="{% url 'billing:product_detail' pk=product.pk %}" class="button button-secondary">
+            <i class="fas fa-times"></i> Cancel
+        </a>
+    </div>
+</div>
+{% endblock %}

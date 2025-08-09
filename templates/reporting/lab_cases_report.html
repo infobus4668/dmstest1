@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block extra_head %}
+<style>
+    #report-filter-form {
+        display: flex;
+        align-items: center; 
+        gap: 20px; 
+        flex-wrap: wrap; 
+    }
+    #report-filter-form > div {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    #report-filter-form label {
+        margin-bottom: 0; 
+        font-weight: 600;
+        color: var(--text-color-light);
+    }
+    #report-filter-form .select2-container { min-width: 180px; }
+    #report-filter-form input,
+    #report-filter-form select {
+        width: auto; 
+    }
+    #report-filter-form .filter-buttons { margin-left: auto; gap: 10px; }
+    /* Style for the date range picker input */
+    #report_date_range { 
+        min-width: 240px; 
+        text-align: center; 
+        cursor: pointer;
+    }
+</style>
+{% endblock extra_head %}
+
+
+{% block content %}
+<h2>{{ page_title }}</h2>
+<p>Filter by date range, dental lab, patient, or status to view lab case history.</p>
+
+<div class="info-card-grid">
+    <div class="info-card">
+        <div class="info-card-title">Total Cost of Cases</div>
+        <div class="info-card-value">₹{{ total_cost|floatformat:2 }}</div>
+    </div>
+    <div class="info-card" style="border-left-color: var(--success-color);">
+        <div class="info-card-title">Total Paid to Labs</div>
+        <div class="info-card-value" style="color: var(--success-color);">₹{{ total_paid|floatformat:2 }}</div>
+    </div>
+    <div class="info-card total-due">
+        <div class="info-card-title">Total Balance Due</div>
+        <div class="info-card-value">₹{{ total_balance|floatformat:2 }}</div>
+    </div>
+</div>
+
+<div class="detail-card" style="margin-bottom: 2em;">
+    <form method="get" id="report-filter-form">
+        <div>
+            <label for="{{ form.date_range.id_for_label }}"><i class="fas fa-calendar-alt"></i></label>
+            {{ form.date_range }}
+        </div>
+        <div>
+            {{ form.lab.label_tag }}
+            {{ form.lab }}
+        </div>
+        <div>
+            {{ form.patient.label_tag }}
+            {{ form.patient }}
+        </div>
+        <div>
+            {{ form.status.label_tag }}
+            {{ form.status }}
+        </div>
+
+        <div class="filter-buttons">
+            <button type="submit" class="button button-primary">
+                <i class="fas fa-filter"></i> Filter
+            </button>
+            <a href="{% url 'reporting:lab_cases_report' %}" class="button button-secondary">
+                <i class="fas fa-times"></i> Clear
+            </a>
+        </div>
+    </form>
+</div>
+
+{% if lab_cases %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Case Date</th>
+                    <th>Patient</th>
+                    <th>Case Type</th>
+                    <th>Lab</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Total Cost</th>
+                    <th style="text-align: right;">Amount Paid</th>
+                    <th style="text-align: right;">Balance Due</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for case in lab_cases %}
+                <tr>
+                    <td>{{ case.created_at|date:"Y-m-d" }}</td>
+                    <td>{{ case.patient.name }}</td>
+                    <td><a href="{% url 'lab_cases:lab_case_detail' case.pk %}">{{ case.case_type }}</a></td>
+                    <td>{{ case.lab.name }}</td>
+                    <td><span class="status-badge status-{{ case.status }}">{{ case.get_status_display }}</span></td>
+                    <td style="text-align: right;">₹{{ case.total_cost|floatformat:2|default:"0.00" }}</td>
+                    <td style="text-align: right;">₹{{ case.amount_paid|floatformat:2|default:"0.00" }}</td>
+                    <td style="text-align: right; font-weight: bold;">₹{{ case.balance_due|floatformat:2|default:"0.00" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="no-items">
+        <p>No lab cases were found matching your filter criteria.</p>
+    </div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    $(document).ready(function() {
+        // Initialize Select2
+        $('.select2-enable').select2({
+            placeholder: "Select an option",
+            allowClear: true,
+            theme: "classic",
+            width: 'resolve'
+        });
+
+        // Initialize Date Range Picker
+        const dateRangeInput = $('#report_date_range');
+        
+        dateRangeInput.daterangepicker({
+            autoUpdateInput: false, // Don't auto-populate the input
+            locale: {
+                cancelLabel: 'Clear',
+                format: 'DD/MM/YYYY'
+            },
+            ranges: {
+               'Today': [moment(), moment()],
+               'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+               'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+               'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+               'This Month': [moment().startOf('month'), moment().endOf('month')],
+               'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+            }
+        });
+
+        // Event handler for when a date range is applied
+        dateRangeInput.on('apply.daterangepicker', function(ev, picker) {
+            $(this).val(picker.startDate.format('DD/MM/YYYY') + ' - ' + picker.endDate.format('DD/MM/YYYY'));
+        });
+
+        // Event handler for when the 'Clear' button in the picker is clicked
+        dateRangeInput.on('cancel.daterangepicker', function(ev, picker) {
+            $(this).val('');
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Edit Stock Item{% endblock %}
+{% block content %}
+<div class="detail-card" style="max-width: 600px; margin: 40px auto;">
+    <h2>Edit Batch: {{ stock_item.batch_number|default:"N/A" }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
+            {% for field in form %}
+                <div class="field-container">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {{ field.errors }}
+                </div>
+            {% endfor %}
+        </div>
+        <div class="main-actions-bar" style="justify-content: flex-end;">
+            <button type="submit" class="button button-primary">
+                <i class="fas fa-save"></i> Save
+            </button>
+            <a href="{% url 'billing:purchase_order_detail' pk=purchase_order.pk %}" class="button button-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

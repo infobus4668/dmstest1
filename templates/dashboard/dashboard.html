@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% load dashboard_extras %}
+
+{% block title %}
+    <i class="fas fa-tachometer-alt"></i> Dashboard
+{% endblock title %}
+
+{% block content %}
+  {% if is_doctor_dashboard %}
+    <h2><i class="fas fa-user-md"></i> Dr. {{ user.doctor_profile.name }}'s Dashboard</h2>
+  {% else %}
+    <h2><i class="fas fa-clinic-medical"></i> Clinic Dashboard</h2>
+  {% endif %}
+
+<div class="info-card-grid">
+  <!-- Appointments Today -->
+  <div class="info-card appointments-today">
+    <div>
+      <div class="info-card-title"><i class="fas fa-calendar-day"></i> Appointments Today</div>
+      <div class="info-card-value">{{ todays_appointments_count }}</div>
+    </div>
+    <div class="info-card-action">
+      <a href="{% url 'appointments:schedule_appointment' %}" class="button button-info">
+        <i class="fas fa-calendar-plus"></i> Schedule New
+      </a>
+    </div>
+  </div>
+
+  <!-- Upcoming Appointments -->
+  <div class="info-card appointments-upcoming">
+    <div>
+      <div class="info-card-title"><i class="fas fa-calendar-alt"></i> Upcoming Appointments</div>
+      <div class="info-card-value">{{ upcoming_appointments_count }}</div>
+    </div>
+    <div class="info-card-action">
+      <a href="{% url 'appointments:appointment_list' %}" class="button button-secondary">
+        <i class="fas fa-calendar-alt"></i> View Schedule
+      </a>
+    </div>
+  </div>
+
+  <!-- Next Week -->
+  <div class="info-card appointments-nextweek">
+    <div>
+      <div class="info-card-title"><i class="fas fa-calendar-week"></i> Upcoming Next Week</div>
+      <div class="info-card-value">{{ upcoming_next_week_appointments_count }}</div>
+    </div>
+    <div class="info-card-action">
+      <a href="{% url 'appointments:appointment_list' %}" class="button button-secondary">
+        <i class="fas fa-calendar-week"></i> View Schedule
+      </a>
+    </div>
+  </div>
+
+  <!-- Outstanding -->
+  <div class="info-card total-due">
+    <div>
+      <div class="info-card-title"><i class="fas fa-wallet"></i> Total Outstanding Balance</div>
+      <div class="info-card-value">{{ total_outstanding_balance|format_currency }}</div>
+    </div>
+    <div class="info-card-action">
+      <a href="{% url 'billing:invoice_list' %}?status=PENDING" class="button button-danger">
+        <i class="fas fa-exclamation-circle"></i> View Pending
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="calendar-container">
+  <h2><i class="fas fa-calendar"></i> Appointments Calendar</h2>
+  <div id="calendar" class="calendar-widget"></div>
+</div>
+
+<div class="info-card-grid">
+  <!-- Lab Cases -->
+  <div class="info-card lab-cases">
+    <div>
+      <div class="info-card-title"><i class="fas fa-vials"></i> Pending Lab Cases</div>
+      <div class="info-card-value">{{ pending_lab_cases_count }}</div>
+    </div>
+    <div class="info-card-action">
+      <a href="{% url 'lab_cases:lab_case_list' %}" class="button button-orange">
+        <i class="fas fa-vials"></i> View Cases
+      </a>
+    </div>
+  </div>
+
+  <!-- Low Stock -->
+  <div class="info-card low-stock">
+    <div>
+      <div class="info-card-title"><i class="fas fa-box-open"></i> Low Stock Products</div>
+      <div class="info-card-value">{{ low_stock_products_count }}</div>
+    </div>
+    <div class="info-card-action">
+      <a href="{% url 'billing:low_stock_report' %}" class="button button-warning">
+        <i class="fas fa-box-open"></i> View Report
+      </a>
+    </div>
+  </div>
+
+  <!-- Total Patients -->
+  <div class="info-card total-patients">
+    <div>
+      <div class="info-card-title"><i class="fas fa-users"></i> Total Patients</div>
+      <div class="info-card-value">{{ total_patients_count|default:"0" }}</div>
+    </div>
+    <div class="info-card-action">
+      <a href="{% url 'patients:patient_list' %}" class="button button-primary">
+        <i class="fas fa-users"></i> View Patients
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const calendarEl = document.getElementById('calendar');
+  if (!calendarEl) return;
+
+  const calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'dayGridMonth,timeGridWeek,timeGridDay'
+    },
+    events: {{ calendar_events_json|safe }},
+    navLinks: true,
+    dayMaxEvents: true,
+    eventClick: function(info) {
+      info.jsEvent.preventDefault();
+      if (info.event.url) {
+        window.location.href = info.event.url;
+      }
+    },
+    eventDidMount: function(info) {
+      const props = info.event.extendedProps;
+      if (typeof tippy !== "undefined") {
+        tippy(info.el, {
+          content: `
+            <div class="tooltip-title">${props.time || 'N/A'} – ${props.patient || 'N/A'}</div>
+            <div class="tooltip-body">With: ${props.doctor || 'N/A'}<br>Status: ${props.status || 'Unknown'}</div>
+          `,
+          allowHTML: true,
+          theme: 'clinic-dark',
+          placement: 'top',
+          arrow: true,
+        });
+      }
+    }
+  });
+
+  calendar.render();
+});
+</script>
+{% endblock extra_js %}

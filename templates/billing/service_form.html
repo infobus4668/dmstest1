@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block content %}
+    <h2>{{ page_title }}</h2>
+    <form method="POST">
+        {% csrf_token %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+            {% for field in form %}
+                <div class="field-container">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {{ field.errors }}
+                </div>
+            {% endfor %}
+        </div>
+        <div class="main-actions-bar" style="justify-content: flex-end;">
+             <a href="{% url 'billing:service_list' %}" class="button button-secondary">
+                <i class="fas fa-list"></i> Back to Service List
+            </a>
+            <button type="submit" class="button button-success">
+                <i class="fas fa-save"></i>
+                {# The text on the button changes depending on whether we are editing an existing object or creating a new one. #}
+                {% if object %}
+                    Save Changes
+                {% else %}
+                    Save Service
+                {% endif %}
+            </button>
+        </div>
+    </form>
+{% endblock content %}

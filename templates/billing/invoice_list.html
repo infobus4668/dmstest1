@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block content %}
+<div class="detail-card">
+    <div class="detail-card-header">
+        <h3>{{ page_title }}</h3>
+        <div class="header-actions">
+            <a href="{% url 'billing:create_invoice' %}" class="button button-primary">
+                <i class="fas fa-plus"></i> Create New Invoice
+            </a>
+        </div>
+    </div>
+
+    <div class="detail-card" style="margin-bottom: 25px; padding: 20px;">
+        <form method="GET" action="{% url 'billing:invoice_list' %}" class="form-inline" style="justify-content: space-between;">
+            <div style="display: flex; gap: 10px;">
+                <input type="text" name="q" placeholder="Search Invoice # or Patient" value="{{ search_query|default:'' }}" style="width: 250px;">
+                {% if status_filter %}
+                    <input type="hidden" name="status" value="{{ status_filter }}">
+                {% endif %}
+                <button type="submit" class="button button-secondary">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <strong>Status:</strong>
+                <a href="{% url 'billing:invoice_list' %}" class="button {% if not status_filter %}button-primary{% else %}button-secondary{% endif %}">
+                    <i class="fas fa-list"></i> All
+                </a>
+                {% for value, display in status_choices %}
+                    <a href="?status={{ value }}&q={{ search_query|default:''|urlencode }}" class="button {% if status_filter == value %}button-primary{% else %}button-secondary{% endif %}">
+                        <i class="fas fa-filter"></i> {{ display }}
+                    </a>
+                {% endfor %}
+            </div>
+        </form>
+    </div>
+
+    {% if invoices_list %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Invoice #</th>
+                    <th>Patient</th>
+                    <th>Doctor</th>
+                    <th>Date</th>
+                    <th>Total</th>
+                    <th>Paid</th>
+                    <th>Refunded</th>
+                    <th>Balance Due</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invoice in invoices_list %}
+                <tr>
+                    <td><a href="{% url 'billing:invoice_detail' pk=invoice.pk %}">{{ invoice.invoice_number }}</a></td>
+                    <td>{{ invoice.patient.name }}</td>
+                    <td>{{ invoice.doctor.name|default:"N/A" }}</td>
+                    <td>{{ invoice.invoice_date }}</td>
+                    <td>₹{{ invoice.total_amount|floatformat:2 }}</td>
+                    <td>₹{{ invoice.amount_paid|floatformat:2 }}</td>
+                    <td>₹{{ invoice.total_refunded|floatformat:2 }}</td>
+                    <td style="font-weight: 600;">₹{{ invoice.balance_due|floatformat:2 }}</td>
+                    <td><span class="status-badge status-{{ invoice.status }}">{{ invoice.get_status_display }}</span></td>
+                    <td class="actions-column">
+                        <a href="{% url 'billing:edit_invoice' pk=invoice.pk %}" class="button button-warning" style="margin-right: 5px;">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <a href="{% url 'billing:delete_invoice' pk=invoice.pk %}" class="button button-danger">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="no-items"><p>No invoices found matching your criteria.</p></div>
+    {% endif %}
+</div>
+{% endblock content %}

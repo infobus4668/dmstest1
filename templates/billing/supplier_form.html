@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title|default:"Supplier Form" }}{% endblock title %}
+
+{% block content %}
+<div class="detail-card" style="max-width: 800px; margin: 20px auto;">
+    <div class="detail-card-header">
+        <h3>{{ page_title|default:"Supplier Details" }}</h3>
+    </div>
+    {% if not object %}
+    <p style="color: var(--text-color-light); margin-top: -10px; margin-bottom: 20px;">Use this form to add a new product supplier to the system.</p>
+    {% endif %}
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
+            <div class="field-container">{{ form.name.label_tag }}{{ form.name }}{{ form.name.errors }}</div>
+            <div class="field-container">{{ form.category.label_tag }}{{ form.category }}{{ form.category.errors }}</div>
+            <div class="field-container">{{ form.contact_person.label_tag }}{{ form.contact_person }}{{ form.contact_person.errors }}</div>
+            <div class="field-container">
+                <label>Contact Number</label>
+                <div class="input-group">
+                    {{ form.country_code }}
+                    {{ form.national_number }}
+                </div>
+                {{ form.country_code.errors }}
+                {{ form.national_number.errors }}
+            </div>
+        </div>
+        <div class="field-container">
+            {{ form.email.label_tag }}
+            {{ form.email }}
+            {{ form.email.errors }}
+        </div>
+        <div class="field-container">
+            {{ form.address.label_tag }}
+            {{ form.address }}
+            {{ form.address.errors }}
+        </div>
+        <div class="main-actions-bar" style="justify-content: flex-end;">
+            <a href="{% url 'billing:supplier_list' %}" class="button button-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+            <button type="submit" class="button button-success">
+                <i class="fas fa-save"></i>
+                {# The text on the button changes depending on whether we are editing an existing object or creating a new one. #}
+                {% if object %}
+                    Save Changes
+                {% else %}
+                    Save Supplier
+                {% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock content %}

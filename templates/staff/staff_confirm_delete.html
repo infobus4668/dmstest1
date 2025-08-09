@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm Deletion{% endblock title %}
+
+{% block content %}
+<div class="detail-card" style="max-width: 600px; margin: 40px auto; text-align: center;">
+    <div class="detail-card-header" style="justify-content: center;">
+        <h3 style="color: var(--danger-color);"><i class="fas fa-exclamation-triangle"></i> Confirm Deletion</h3>
+    </div>
+    
+    <p style="font-size: 1.1em; margin-top: 20px;">
+        Are you sure you want to delete the staff member: <strong>{{ staff_member.name }}</strong>?
+    </p>
+    <p class="text-muted">
+        Their user account ({{ staff_member.user.username }}) will also be permanently deleted.
+    </p>
+    <p style="font-weight: bold; color: var(--danger-color);">This action cannot be undone.</p>
+
+    <div class="main-actions-bar" style="justify-content: center; border-top: none; margin-top: 30px;">
+        <a href="{% url 'staff:staff_list' %}" class="button button-secondary">
+            <i class="fas fa-arrow-left"></i> Cancel
+        </a>
+        <form method="POST" style="margin: 0;">
+            {% csrf_token %}
+            <button type="submit" class="button button-danger">
+                <i class="fas fa-trash"></i> Yes, Delete Staff Member
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock content %}

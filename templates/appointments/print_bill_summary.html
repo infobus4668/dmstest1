@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ page_title }}</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .clinic-details h2 {
+            margin: 0;
+            color: #0056b3;
+            font-size: 28pt;
+        }
+        .clinic-details p {
+            margin: 2px 0;
+            font-size: 10pt;
+            color: #444;
+        }
+        .info-grid {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #ccc;
+        }
+        .info-grid > div {
+            width: 48%;
+        }
+        .info-grid h3 {
+            font-size: 13pt;
+            color: #0056b3;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+        }
+        .info-grid p {
+            margin: 4px 0;
+        }
+        .section {
+            margin-bottom: 25px;
+        }
+        .section h3 {
+             font-size: 13pt;
+            color: #0056b3;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 4px;
+            margin-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        thead {
+            background-color: #f2f2f2;
+        }
+        .summary-table {
+            width: 60%;
+            margin-left: 40%;
+            margin-top: 15px;
+        }
+        .summary-table td {
+            border: none;
+        }
+        .summary-table tr.grand-total td {
+            font-weight: bold;
+            font-size: 1.2em;
+            border-top: 2px solid #333;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 10pt;
+            color: #777;
+            border-top: 1px solid #ccc;
+            padding-top: 15px;
+        }
+        .main-actions-bar {
+            margin-top: 20px;
+        }
+        .button {
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .button-primary {
+            background-color: #007bff;
+        }
+        .no-print {
+            display: none;
+        }
+    </style>
+</head>
+<body onload="window.print()">
+    <div class="container">
+        <div class="header">
+            <div class="clinic-details">
+                <h2>
+                    <i class="fas fa-file-medical-alt" style="margin-right: 10px;"></i>
+                    {{ CLINIC_NAME }}
+                </h2>
+                <p>{{ CLINIC_ADDRESS }}</p>
+                <p>Phone: {{ CLINIC_PHONE }} | Email: {{ CLINIC_EMAIL }}</p>
+            </div>
+        </div>
+
+        <div class="info-grid">
+            <div class="patient-details">
+                <h3>Patient Details</h3>
+                <p><strong>Name:</strong> {{ appointment.patient.name }}</p>
+                <p><strong>Age:</strong> {{ appointment.patient.age }}</p>
+                <p><strong>Place:</strong> {{ appointment.patient.place|default:"N/A" }}</p>
+            </div>
+            <div class="appointment-details">
+                <h3>Appointment Details</h3>
+                <p><strong>Date:</strong> {{ appointment.appointment_datetime|date:"F d, Y" }}</p>
+                <p><strong>Doctor:</strong> Dr. {{ appointment.doctor.name }}</p>
+                <p><strong>Reason for Visit:</strong> {{ appointment.reason|default:"N/A" }}</p>
+            </div>
+        </div>
+
+        {% if invoice %}
+            <div class="section">
+                <h3>Treatments &amp; Services</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th class="text-right">Cost</th>
+                            <th class="text-right">Discount</th>
+                            <th class="text-right">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in services_list %}
+                        <tr>
+                            <td>{{ item.description }}</td>
+                            <td class="text-right">₹{{ item.total_price|floatformat:2 }}</td>
+                            <td class="text-right">- ₹{{ item.discount|floatformat:2 }}</td>
+                            <td class="text-right">₹{{ item.net_price|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4">No services or treatments billed.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section">
+                <h3>Products Sold</h3>
+                <table>
+                     <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th class="text-right">Cost</th>
+                            <th class="text-right">Discount</th>
+                            <th class="text-right">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in products_list %}
+                        <tr>
+                            <td>{{ item.description }}</td>
+                            <td class="text-right">₹{{ item.total_price|floatformat:2 }}</td>
+                            <td class="text-right">- ₹{{ item.discount|floatformat:2 }}</td>
+                            <td class="text-right">₹{{ item.net_price|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4">No products sold.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+
+        {% if prescription %}
+        <div class="section">
+            <h3>Prescription</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Medication</th>
+                        <th>Dosage</th>
+                        <th>Frequency</th>
+                        <th>Duration</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in prescription_items %}
+                    <tr>
+                        <td>{{ item.medication_name }}</td>
+                        <td>{{ item.dosage|default:"-" }}</td>
+                        <td>{{ item.frequency|default:"-" }}</td>
+                        <td>{{ item.duration|default:"-" }}</td>
+                        <td>{{ item.notes|default:"-" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5">No medications prescribed.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+             {% if prescription.notes %}
+                <p><strong>General Instructions:</strong> {{ prescription.notes|linebreaksbr }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if invoice %}
+        <div class="section">
+            <h3>Payment Summary</h3>
+            <table class="summary-table">
+                <tbody>
+                    <tr>
+                        <td>Subtotal:</td>
+                        <td class="text-right">₹{{ invoice.total_amount|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <td>Total Discount:</td>
+                        <td class="text-right">- ₹{{ invoice.total_discount|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Net Amount:</strong></td>
+                        <td class="text-right"><strong>₹{{ invoice.net_amount|floatformat:2 }}</strong></td>
+                    </tr>
+                     <tr>
+                        <td>Amount Paid:</td>
+                        <td class="text-right">- ₹{{ invoice.amount_paid|floatformat:2 }}</td>
+                    </tr>
+                    <tr class="grand-total">
+                        <td>Balance Due:</td>
+                        <td class="text-right">₹{{ invoice.balance_due|floatformat:2 }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <div class="footer">
+    <p>Thank you for your visit!</p>
+    <div class="main-actions-bar no-print" style="margin-top: 20px;">
+        <button onclick="window.print()" class="button button-primary">
+            <i class="fas fa-print"></i> Print
+        </button>
+    </div>
+</div>
+    </div>
+</body>
+</html>

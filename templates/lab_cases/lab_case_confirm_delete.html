@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Dental Clinic MS{% endblock title %}
+
+{% block content %}
+<div style="text-align: center; max-width: 600px; margin: auto;">
+    <h2 style="color: var(--danger-color);">{{ page_title }}</h2>
+    
+    <p>Are you sure you want to permanently delete the lab case for <strong>{{ case.patient.name }}</strong>?</p>
+    
+    <div style="background-color: #F8FAFC; margin-bottom: 20px; padding: 15px; border: 1px solid var(--border-color); border-radius: var(--border-radius); text-align: left;">
+        <p style="margin: 0 0 8px 0;"><strong>Case Type:</strong> {{ case.case_type }}</p>
+        <p style="margin: 0 0 8px 0;"><strong>Lab:</strong> {{ case.lab.name }}</p>
+        <p style="margin: 0;"><strong>Date Sent:</strong> {{ case.date_sent|date:"M d, Y"|default:"N/A" }}</p>
+    </div>
+
+    <p style="font-weight: bold; color: var(--danger-color);">This action cannot be undone.</p>
+    
+    <div class="main-actions-bar" style="justify-content: center; border-top: none;">
+        <a href="{% url 'lab_cases:lab_case_detail' case.pk %}" class="button button-secondary">
+            <i class="fas fa-arrow-left"></i> Cancel
+        </a>
+        <form method="POST" style="display: inline; margin: 0;">
+            {% csrf_token %}
+            <button type="submit" class="button button-danger">
+                <i class="fas fa-trash"></i> Yes, Delete Case
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock content %}

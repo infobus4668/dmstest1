@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Dental Clinic MS{% endblock title %}
+
+{% block extra_head %}
+<style>
+    .overdue-case td {
+        background-color: #f8d7da !important;
+        color: #721c24;
+        font-weight: bold;
+    }
+    .overdue-case a {
+        color: #721c24 !important;
+    }
+
+    #lab-case-filter-form {
+        display: flex;
+        align-items: center; 
+        gap: 15px; 
+        flex-wrap: wrap; 
+    }
+    #lab-case-filter-form label {
+        display: inline-block; 
+        margin-bottom: 0; 
+        margin-right: 5px; 
+        font-weight: 600;
+        color: var(--text-color-light);
+    }
+    #lab-case-filter-form .select2-container {
+        min-width: 200px;
+    }
+    #lab-case-filter-form input[type="date"] {
+        width: auto; 
+    }
+    #lab-case-filter-form .filter-buttons {
+        margin-left: auto; 
+        display: flex;
+        gap: 10px;
+    }
+</style>
+{% endblock extra_head %}
+
+{% block content %}
+<h2>{{ page_title }}</h2>
+
+<div class="page-actions" style="justify-content: flex-end;">
+    <a href="{% url 'lab_cases:lab_list' %}" class="button button-primary">
+        <i class="fas fa-industry"></i> Manage Dental Labs
+    </a>
+    <a href="{% url 'lab_cases:add_lab_case' %}" class="button button-primary">
+        <i class="fas fa-plus"></i> Log New Lab Case
+    </a>
+</div>
+
+<div class="detail-card" style="margin-bottom: 25px; padding: 20px;">
+    <form method="get" class="form-inline" id="lab-case-filter-form">
+        {{ filter_form.status.label_tag }}
+        {{ filter_form.status }}
+
+        {{ filter_form.lab.label_tag }}
+        {{ filter_form.lab }}
+
+        {{ filter_form.start_date.label_tag }}
+        {{ filter_form.start_date }}
+
+        {{ filter_form.end_date.label_tag }}
+        {{ filter_form.end_date }}
+
+        <div class="filter-buttons">
+            <button type="submit" class="button button-primary">
+                <i class="fas fa-filter"></i> Filter
+            </button>
+            <a href="{% url 'lab_cases:lab_case_list' %}" class="button button-secondary">
+                <i class="fas fa-times"></i> Clear
+            </a>
+        </div>
+    </form>
+</div>
+
+{% if lab_cases_list %}
+<div class="table-responsive">
+    <table>
+        <thead>
+            <tr>
+                <th>Patient</th>
+                <th>Case Type</th>
+                <th>Lab</th>
+                <th>Date Sent</th>
+                <th>Date Due</th>
+                <th>Date Received</th>
+                <th style="text-align: right;">Total Cost</th>
+                <th style="text-align: right;">Balance Due</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for case in lab_cases_list %}
+            <tr class="{% if case.is_overdue %}overdue-case{% endif %}">
+                <td><a href="{% url 'patients:patient_detail' case.patient.pk %}">{{ case.patient.name }}</a></td>
+                <td><a href="{% url 'lab_cases:lab_case_detail' case.pk %}">{{ case.case_type }}</a></td>
+                <td>{{ case.lab.name }}</td>
+                <td>{{ case.date_sent|date:"M d, Y"|default:"N/A" }}</td>
+                <td>{{ case.date_due|date:"M d, Y"|default:"N/A" }}</td>
+                <td>{{ case.date_received|date:"M d, Y"|default:"N/A" }}</td>
+                <td style="text-align: right;">₹{{ case.total_cost|floatformat:2 }}</td>
+                <td style="text-align: right;">₹{{ case.balance_due|floatformat:2 }}</td>
+                <td><span class="status-badge status-{{ case.status }}">{{ case.get_status_display }}</span></td>
+                <td>
+                    <a href="{% url 'lab_cases:lab_case_detail' case.pk %}" class="button button-info">
+                        <i class="fas fa-eye"></i> Details
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+    <div class="no-items">
+        <p>No lab cases found matching your criteria.</p>
+    </div>
+{% endif %}
+
+{% endblock content %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    $(document).ready(function() {
+        $('.select2-enable').select2({
+            placeholder: "Select an option",
+            allowClear: true,
+            theme: "classic",
+            width: 'resolve'
+        });
+    });
+</script>
+{% endblock extra_js %}

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block content %}
+<div class="detail-card">
+    <div class="detail-card-header">
+        <h3>{{ page_title }}</h3>
+        <div class="header-actions">
+            <a href="{% url 'billing:add_supplier' %}" class="button button-primary">
+                <i class="fas fa-plus"></i> Add Supplier
+            </a>
+            <a href="{% url 'billing:purchase_order_list' %}" class="button button-primary">
+                <i class="fas fa-list"></i> View Orders
+            </a>
+            <a href="{% url 'billing:inventory_list' %}" class="button button-secondary">
+                <i class="fas fa-boxes"></i> Back to Inventory
+            </a>
+        </div>
+    </div>
+
+    <div class="detail-card" style="margin-bottom: 30px; padding: 20px;">
+        <form method="get" action="" class="form-inline" style="margin: 0;">
+             <label for="category" style="margin-bottom: 0;">Filter by Category:</label>
+             <select name="category" id="category" onchange="this.form.submit()">
+                 <option value="">All Categories</option>
+                 {% for key, value in category_choices %}
+                     <option value="{{ key }}" {% if category_filter == key %}selected{% endif %}>{{ value }}</option>
+                 {% endfor %}
+             </select>
+        </form>
+    </div>
+
+    {% if suppliers_list %}
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Supplier Name</th>
+                        <th>Category</th>
+                        <th>Contact Person</th>
+                        <th>Phone</th>
+                        <th class="text-right">Outstanding Balance</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for supplier in suppliers_list %}
+                    <tr>
+                        <td>{{ supplier.name }}</td>
+                        <td>{{ supplier.get_category_display }}</td>
+                        <td>{{ supplier.contact_person|default:"-" }}</td>
+                        <td>{{ supplier.phone_number|default:"-" }}</td>
+                        <td class="text-right" style="font-weight: bold; color: var(--danger-color);">₹{{ supplier.get_outstanding_balance|floatformat:2 }}</td>
+                        <td class="actions-column">
+                            <a href="{% url 'billing:edit_supplier' supplier.pk %}" class="button button-warning" style="margin-right: 5px;">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <a href="{% url 'billing:delete_supplier' supplier.pk %}" class="button button-danger">
+                                <i class="fas fa-trash"></i> Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="no-items">
+            <p>No suppliers found. Add one to get started.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock content %}

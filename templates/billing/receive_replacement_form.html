@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block content %}
+<div class="container">
+    <div class="details-header-card">
+        <div class="patient-info">
+            <h2>{{ page_title }}</h2>
+            {# --- FIX: Conditionally display subtitle based on whether a PO exists --- #}
+            {% if purchase_return.purchase_order %}
+                <p>For item returned from PO #{{ purchase_return.purchase_order.pk }}</p>
+            {% else %}
+                <p>For item returned from Batch: {{ purchase_return.stock_item.batch_number }}</p>
+            {% endif %}
+        </div>
+        <div class="header-actions">
+            {# --- FIX: Conditionally display the correct "Back" button --- #}
+            {% if purchase_return.purchase_order %}
+                <a href="{% url 'billing:purchase_order_detail' pk=purchase_return.purchase_order.pk %}" class="button button-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Order
+                </a>
+            {% else %}
+                <a href="{% url 'billing:return_list' %}" class="button button-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Returns List
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="detail-card" style="max-width: 700px; margin: 20px auto;">
+        <div class="detail-card-header">
+            <h3>Original Returned Item Details</h3>
+        </div>
+        <div class="detail-item--grid"><strong>Product:</strong><p>{{ purchase_return.stock_item.product_variant }}</p></div>
+        <div class="detail-item--grid"><strong>Original Batch:</strong><p>{{ purchase_return.stock_item.batch_number }}</p></div>
+        <div class="detail-item--grid"><strong>Quantity Returned:</strong><p>{{ purchase_return.quantity }}</p></div>
+        <div class="detail-item--grid"><strong>Quantity Replaced so far:</strong><p>{{ purchase_return.quantity_replaced }}</p></div>
+        <div class="detail-item--grid"><strong>Pending Replacement:</strong><p style="font-weight: bold;">{{ purchase_return.quantity_pending_action }}</p></div>
+    </div>
+
+    <div class="detail-card" style="max-width: 700px; margin: 20px auto;">
+        <div class="detail-card-header">
+            <h3>Enter New Replacement Batch Details</h3>
+        </div>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <ul class="messages"><li class="error">{{ form.non_field_errors.as_text }}</li></ul>
+            {% endif %}
+
+            {% for field in form %}
+                <div class="field-container">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                    {% endif %}
+                    {{ field.errors }}
+                </div>
+            {% endfor %}
+            <div class="main-actions-bar">
+                <button type="submit" class="button button-success">
+                    <i class="fas fa-check"></i> Save Replacement
+                </button>
+                {# --- FIX: Conditionally display the correct "Cancel" button --- #}
+                {% if purchase_return.purchase_order %}
+                    <a href="{% url 'billing:purchase_order_detail' pk=purchase_return.purchase_order.pk %}" class="button button-secondary">Cancel</a>
+                {% else %}
+                    <a href="{% url 'billing:return_list' %}" class="button button-secondary">Cancel</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock content %}

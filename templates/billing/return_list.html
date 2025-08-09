@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block extra_head %}
+<style>
+    .return-card {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        display: flex;
+        flex-direction: column;
+    }
+    .return-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .return-card-header .product-info {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #343a40;
+    }
+    .return-card-header .product-info .batch-tag {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #6c757d;
+        background-color: #e9ecef;
+        padding: 0.2rem 0.5rem;
+        border-radius: 0.25rem;
+        margin-left: 0.5rem;
+    }
+    .return-card-body {
+        padding: 1.5rem;
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2rem;
+    }
+    .details-group h5 {
+        font-size: 0.9rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 100px 1fr;
+        gap: 0.5rem;
+    }
+    .detail-grid dt {
+        font-weight: 500;
+        color: #6c757d;
+    }
+    .detail-grid dd {
+        font-weight: 600;
+        color: #212529;
+        margin: 0;
+    }
+    .return-card-footer {
+        padding: 1rem 1.5rem;
+        background-color: #f8f9fa;
+        border-top: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .actions-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    /* --- FIX: ADD THIS NEW CSS RULE FOR THE BADGE --- */
+    .status-badge.status-REPLACEMENT {
+        background-color: #e6f7ff; /* Light blue background */
+        color: #1890ff; /* Darker blue text */
+        border: 1px solid #91d5ff; /* Medium blue border */
+    }
+    /* --- END OF FIX --- */
+
+    .status-badge.status-PARTIALLY_PROCESSED {
+        background-color: #fffbe6;
+        color: #faad14;
+        border: 1px solid #ffe58f;
+    }
+    .status-badge.status-FULLY_PROCESSED {
+        background-color: #f6ffed;
+        color: #52c41a;
+        border: 1px solid #b7eb8f;
+    }
+
+    @media (max-width: 992px) {
+        .return-card-body {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="details-header-card">
+        <div class="patient-info">
+            <h2><i class="fas fa-undo-alt"></i> {{ page_title }}</h2>
+            <p>A centralized list of all stock items returned to suppliers.</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'billing:inventory_list' %}" class="button button-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Inventory
+            </a>
+        </div>
+    </div>
+
+    <div class="returns-list-container mt-4">
+        {% for r in returns_list %}
+        <div class="return-card">
+            <div class="return-card-header">
+                <div class="product-info">
+                    {{ r.stock_item.product_variant }}
+                    <span class="batch-tag">Batch: {{ r.stock_item.batch_number|default:"N/A" }}</span>
+                </div>
+                <div class="source-info">
+                    {% if r.purchase_order %}
+                        <a href="{% url 'billing:purchase_order_detail' pk=r.purchase_order.pk %}" class="button button-outline btn-sm">
+                            From PO #{{ r.purchase_order.pk }}
+                        </a>
+                    {% else %}
+                        <span class="status-badge status-REPLACEMENT">General Return</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="return-card-body">
+                <div class="details-group">
+                    <h5>Return Details</h5>
+                    <dl class="detail-grid">
+                        <dt>Return Date:</dt>
+                        <dd>{{ r.return_date|date:"d M Y" }}</dd>
+                        <dt>Reason:</dt>
+                        <dd>{{ r.reason|default:"-" }}</dd>
+                        <dt>Qty Returned:</dt>
+                        <dd>{{ r.quantity }}</dd>
+                        <dt>Value:</dt>
+                        <dd>₹{{ r.total_value|floatformat:2 }}</dd>
+                    </dl>
+                </div>
+                
+                <div class="details-group">
+                    <h5>Action History</h5>
+                    <table class="table table-bordered table-sm sub-table mb-3">
+                        <thead><tr><th colspan="3"><i class="fas fa-exchange-alt me-2"></i>Replacements</th></tr></thead>
+                        <tbody>
+                            {% for rep in r.replacementitem_set.all %}
+                            <tr>
+                                <td>{{ rep.date_received|date:"d M Y" }}</td>
+                                <td>{{ rep.quantity }} units</td>
+                                <td>New Batch: {{ rep.batch_number }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" class="text-center text-muted">No replacements recorded.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    
+                    <table class="table table-bordered table-sm sub-table">
+                         <thead><tr><th colspan="2"><i class="fas fa-money-check-alt me-2"></i>Refunds</th></tr></thead>
+                         <tbody>
+                             {% for refund in r.supplierrefund_set.all %}
+                             <tr>
+                                 <td>{{ refund.refund_date|date:"d M Y" }}</td>
+                                 <td class="text-end">₹{{ refund.amount|floatformat:2 }}</td>
+                             </tr>
+                             {% empty %}
+                             <tr><td colspan="2" class="text-center text-muted">No refund recorded.</td></tr>
+                             {% endfor %}
+                         </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="return-card-footer">
+                <div class="status-display">
+                    <strong>Status:</strong>
+                    <span class="status-badge status-{{ r.status }} ms-2">{{ r.get_status_display }}</span>
+                </div>
+                <div class="actions-buttons">
+                    {% if r.value_pending_action > 0 %}
+                        {% if r.purchase_order %}
+                            <a href="{% url 'billing:add_supplier_refund_for_return' po_pk=r.purchase_order.pk return_pk=r.pk %}" class="button button-warning btn-sm" title="Record a refund for a PO-based return">
+                                <i class="fas fa-money-check-alt me-1"></i> Refund ({{ r.quantity_pending_action }})
+                            </a>
+                        {% else %}
+                            <a href="{% url 'billing:add_general_supplier_refund' return_pk=r.pk %}" class="button button-warning btn-sm" title="Record a refund for a general return">
+                                <i class="fas fa-money-check-alt me-1"></i> Refund ({{ r.quantity_pending_action }})
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'billing:receive_replacement' return_pk=r.pk %}" class="button button-info btn-sm" title="Record receipt of replacement stock">
+                            <i class="fas fa-exchange-alt me-1"></i> Replacement ({{ r.quantity_pending_action }})
+                        </a>
+                    {% else %}
+                        <span class="text-muted fst-italic">No pending actions</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="detail-card text-center p-5">
+            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+            <h4>No Returns Recorded</h4>
+            <p class="text-muted">You can initiate a return from the main Inventory List page.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock content %}
