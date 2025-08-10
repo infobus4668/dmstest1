@@ -5,15 +5,18 @@
 
 {% block content %}
 <form method="POST" id="invoice-form">
+    {% csrf_token %}
+    {{ invoice_form.media }}
+    {{ formset.media }}
+
     <div class="details-header-card">
         <div class="patient-info">
              <h2>{{ page_title }}</h2>
         </div>
     </div>
 
-    {% csrf_token %}
     <div class="details-grid-block">
-        <div class="main-details">
+        <div class.main-details">
             <div class="detail-card">
                 <div class="detail-card-header"><h3>Invoice Details</h3></div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
@@ -108,7 +111,6 @@
 {% block extra_js %}
 {{ block.super }}
 <style>
-/* ... other styles from previous fix ... */
 .details-grid-block { 
     display: block;
     margin-bottom: 120px;
@@ -142,126 +144,121 @@
 $(document).ready(function() {
     const itemData = JSON.parse('{{ js_data|escapejs }}');
     const container = $('#invoice-items-container');
-    const totalFormsInput = $('#id_items-TOTAL_FORMS');
-    const template = $('#empty-form-template').html();
-    const invoiceDiscountInput = $('#id_discount');
 
     function updateLiveSummary() {
-        let subtotal = 0;
-        let itemDiscountTotal = 0;
-        $('.formset-row').each(function() {
+        let subtotal = 0, itemDiscountTotal = 0;
+        container.find('.formset-row:visible').each(function() {
             const row = $(this);
-            const isDeleted = row.find('input[name$="-DELETE"]').is(':checked');
-            if (!isDeleted && row.is(":visible")) {
-                const qty = parseFloat(row.find('input[name$="-quantity"]').val()) || 0;
-                const price = parseFloat(row.find('input[name$="-unit_price"]').val()) || 0;
-                const discount = parseFloat(row.find('input[name$="-discount"]').val()) || 0;
-                subtotal += qty * price;
-                itemDiscountTotal += qty * discount;
-            }
+            if (row.find('input[name$="-DELETE"]').is(':checked')) return;
+            
+            const qty = parseFloat(row.find('input[name$="-quantity"]').val()) || 1;
+            const price = parseFloat(row.find('input[name$="-unit_price"]').val()) || 0;
+            const discount = parseFloat(row.find('input[name$="-discount"]').val()) || 0;
+            subtotal += qty * price;
+            itemDiscountTotal += qty * discount;
         });
-        const invoiceDiscount = parseFloat(invoiceDiscountInput.val()) || 0;
+
+        const invoiceDiscount = parseFloat($('#id_discount').val()) || 0;
         const totalDiscount = itemDiscountTotal + invoiceDiscount;
-        const netAmount = subtotal - totalDiscount;
         $('#summary-subtotal').text('₹' + subtotal.toFixed(2));
         $('#summary-discount').text('₹' + totalDiscount.toFixed(2));
-        $('#summary-net').text('₹' + netAmount.toFixed(2));
+        $('#summary-net').text('₹' + (subtotal - totalDiscount).toFixed(2));
     }
 
-    function initializeRow(row) {
-        // The definitive fix for the "not clickable" issue
-        row.find('.invoice-item-select').select2({
-            width: '100%',
-            dropdownParent: row.closest('.invoice-item-card')
-        });
-        
+    function attachRowListeners(row) {
         const serviceSelect = row.find('select[name$="-service"]');
-        const productVariantSelect = row.find('select[name$="-product_variant"]');
-        const stockCell = row.find('.stock-cell');
-        const stockItemSelect = row.find('select[name$="-stock_item"]');
+        const productSelect = row.find('select[name$="-product_variant"]');
+        const stockSelect = row.find('select[name$="-stock_item"]');
         const descInput = row.find('input[name$="-description"]');
         const priceInput = row.find('input[name$="-unit_price"]');
-        const quantityInput = row.find('input[name$="-quantity"]');
-
-        row.on('input change', 'input, select', updateLiveSummary);
+        const stockCell = row.find('.stock-cell');
 
         serviceSelect.on('change', function() {
-            const isServiceSelected = !!$(this).val();
-            productVariantSelect.val(null).trigger('change').prop('disabled', isServiceSelected);
-            stockCell.removeClass('visible');
-            if (isServiceSelected) {
-                const service = itemData.services[$(this).val()];
-                descInput.val(service.name);
-                priceInput.val(service.price);
-            }
-        });
-
-        productVariantSelect.on('change', function() {
-            const isProductSelected = !!$(this).val();
-            serviceSelect.val(null).trigger('change').prop('disabled', isProductSelected);
-            stockCell.toggleClass('visible', isProductSelected);
-            
-            const variantId = $(this).val();
-            stockItemSelect.empty().append('<option value="">Select Batch...</option>').prop('disabled', !variantId);
-            
-            if (variantId && itemData.batches[variantId]) {
-                itemData.batches[variantId].forEach(function(batch) {
-                    const optionText = `${batch.name} (Avail: ${batch.available})`;
-                    const option = new Option(optionText, batch.pk, false, false);
-                    stockItemSelect.append(option);
-                });
-            }
-            stockItemSelect.trigger('change');
-        });
-        
-        stockItemSelect.on('change', function() {
-            const stockId = $(this).val();
-            const variantId = productVariantSelect.val();
-            if (stockId && variantId && itemData.batches[variantId]) {
-                const batch = itemData.batches[variantId].find(b => String(b.pk) === stockId);
-                if (batch) {
-                    priceInput.val(batch.mrp);
-                    quantityInput.attr('max', batch.available);
-                    descInput.val(itemData.products[variantId].name);
+            const serviceId = $(this).val();
+            if (serviceId) {
+                productSelect.prop('disabled', true).val(null).trigger('change.select2');
+                const service = itemData.services[serviceId];
+                if (service) {
+                    descInput.val(service.name);
+                    priceInput.val(service.price).trigger('change');
                 }
             } else {
-                if (!serviceSelect.val()){
-                    priceInput.val('');
-                    descInput.val('');
-                }
+                productSelect.prop('disabled', false);
             }
         });
 
-        if (productVariantSelect.val()) {
-            stockCell.addClass('visible');
-        }
-    }
-    
-    // DEFINITIVE FIX: Initialize all dropdowns on the page manually
-    $('.invoice-header-select').select2({ width: '100%' });
+        productSelect.on('change', function() {
+            const variantId = $(this).val();
+            stockSelect.empty().append('<option value=""></option>').trigger('change');
+            
+            if (variantId) {
+                serviceSelect.prop('disabled', true).val(null).trigger('change.select2');
+                stockCell.addClass('visible');
+                stockSelect.prop('disabled', false);
+                if (itemData.batches[variantId]?.length > 0) {
+                    itemData.batches[variantId].forEach(batch => {
+                        const optionText = `${batch.name} (Avail: ${batch.available})`;
+                        stockSelect.append(new Option(optionText, batch.pk));
+                    });
+                }
+            } else {
+                serviceSelect.prop('disabled', false);
+                stockCell.removeClass('visible');
+                stockSelect.prop('disabled', true);
+            }
+        });
 
-    $('#add-item-button').on('click', function() {
-        let formIdx = parseInt(totalFormsInput.val(), 10);
-        const newRowHtml = template.replace(/__prefix__/g, formIdx);
-        const newRow = $(newRowHtml);
-        container.append(newRow);
-        initializeRow(newRow);
-        totalFormsInput.val(formIdx + 1);
+        stockSelect.on('change', function() {
+            const stockId = $(this).val();
+            const variantId = productSelect.val();
+            if (stockId && variantId) {
+                const batch = itemData.batches[variantId]?.find(b => String(b.pk) === stockId);
+                const product = itemData.products[variantId];
+                if (batch && product) {
+                    priceInput.val(batch.mrp).trigger('change');
+                    descInput.val(product.name);
+                }
+            } else if (!serviceSelect.val()) {
+                priceInput.val('').trigger('change');
+                descInput.val('');
+            }
+        });
+    }
+
+    // Initialize existing rows
+    container.find('.formset-row').each(function() {
+        attachRowListeners($(this));
     });
 
+    // Handle adding new rows
+    $('#add-item-button').on('click', function() {
+        const totalForms = $('#id_items-TOTAL_FORMS');
+        let formIdx = parseInt(totalForms.val(), 10);
+        
+        const newRowHtml = $('#empty-form-template').html().replace(/__prefix__/g, formIdx);
+        const newRow = $(newRowHtml);
+        container.append(newRow);
+        
+        // Let django-select2 initialize the new widgets
+        newRow.find('.django-select2').djangoSelect2();
+        
+        // Attach our custom logic
+        attachRowListeners(newRow);
+        
+        totalForms.val(formIdx + 1);
+    });
+
+    // Handle removing rows
     container.on('click', '.remove-row-btn', function() {
         const row = $(this).closest('.formset-row');
-        row.hide();
-        row.find('input[name$="-DELETE"]').prop('checked', true);
+        row.hide().find('input[name$="-DELETE"]').prop('checked', true);
         updateLiveSummary();
     });
 
-    invoiceDiscountInput.on('input', updateLiveSummary);
+    // Update summary on any form change
+    $('#invoice-form').on('change input', 'input, select', updateLiveSummary);
 
-    container.find('.formset-row').each(function() {
-        initializeRow($(this));
-    });
-
+    // Initial summary calculation
     updateLiveSummary();
 });
 </script>
