@@ -265,11 +265,24 @@ class InvoiceItemForm(forms.ModelForm):
         self.fields['service'].queryset = Service.objects.filter(is_active=True)
         self.fields['service'].empty_label = "Select a Service..."
         self.fields['product_variant'].empty_label = "Select a Product..."
-        self.fields['stock_item'].queryset = StockItem.objects.none()
         self.fields['stock_item'].empty_label = "Select Batch..."
 
-        # When editing existing, prepopulate product from batch:
-        if self.instance and self.instance.pk and self.instance.stock_item:
+        # Default to an empty queryset
+        self.fields['stock_item'].queryset = StockItem.objects.none()
+
+        # If form is bound to data (POST request), dynamically set the queryset for validation
+        if self.data:
+            try:
+                # Find the product_variant id from the submitted data
+                variant_id = int(self.data.get(self.prefix + '-product_variant'))
+                # Set the queryset to all stock items for that variant
+                self.fields['stock_item'].queryset = StockItem.objects.filter(product_variant_id=variant_id).order_by('expiry_date')
+            except (ValueError, TypeError):
+                # Handle cases where the data is missing or not a number
+                pass
+        # If form is for an existing instance (editing), set the queryset and initial values
+        elif self.instance.pk and self.instance.stock_item:
+            self.fields['stock_item'].queryset = StockItem.objects.filter(product_variant=self.instance.stock_item.product_variant).order_by('expiry_date')
             self.initial['product_variant'] = self.instance.stock_item.product_variant
 
 # Inline Formset for Invoice Items

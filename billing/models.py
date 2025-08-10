@@ -31,7 +31,7 @@ class Supplier(models.Model):
 
     def get_outstanding_balance(self):
         """
-        Calculates the total outstanding balance by summing the balance_due 
+        Calculates the total outstanding balance by summing the balance_due
         of all purchase orders associated with this supplier.
         """
         # The 'purchase_orders' related_name comes from the ForeignKey in the PurchaseOrder model
@@ -335,8 +335,9 @@ class Invoice(models.Model):
 
     @property
     def total_discount(self) -> Decimal:
+        # FIX: Calculate discount as a flat amount per line item, not per unit
         items_disc = self.invoice_items.aggregate(
-            total=Coalesce(Sum(F('discount') * F('quantity')), Decimal('0.00'))
+            total=Coalesce(Sum('discount'), Decimal('0.00'))
         )['total'] or Decimal('0.00')
         return (items_disc + (self.discount or Decimal('0.00'))).quantize(Decimal('0.01'))
 
@@ -377,7 +378,7 @@ class InvoiceItem(models.Model):
     def __str__(self):
         desc = self.description or self.service or self.stock_item
         return f"{self.quantity} x {desc} on Invoice {self.invoice.invoice_number}"
-    
+
     @property
     def display_description(self):
         if self.description:
@@ -392,7 +393,8 @@ class InvoiceItem(models.Model):
     def net_price(self):
         unit_price = self.unit_price or Decimal('0.00')
         discount = self.discount or Decimal('0.00')
-        return (self.quantity * (unit_price - discount)).quantize(Decimal('0.01'))
+        # FIX: Calculate net price based on a flat line-item discount
+        return ((self.quantity * unit_price) - discount).quantize(Decimal('0.01'))
 
     def clean(self):
         if self.quantity <= 0:

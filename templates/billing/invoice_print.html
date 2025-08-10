@@ -1,86 +1,239 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Invoice {{ invoice.invoice_number }}</title>
     <style>
-        body { font-family: sans-serif; font-size: 10pt; color: #444; }
-        .container { max-width: 800px; margin: auto; padding: 20px; }
-        .header { text-align: center; margin-bottom: 20px; }
-        .header h1 { margin: 0; color: #0056b3; font-size: 24pt; }
-        .header p { margin: 2px 0; font-size: 9pt; }
-        .invoice-details { display: flex; justify-content: space-between; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ccc;}
-        .invoice-details .patient-info, .invoice-details .invoice-meta { width: 48%; }
-        .invoice-details h2 { font-size: 14pt; margin-top: 0; color: #0056b3; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px;}
-        .invoice-details p { margin: 4px 0; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px;}
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        thead { background-color: #f2f2f2; }
-        .text-right { text-align: right; }
-        .summary { width: 50%; margin-left: 50%; }
-        .summary table { width: 100%; }
-        .summary td { border: none; padding: 4px 8px; }
-        .summary .grand-total { font-weight: bold; font-size: 1.2em; border-top: 2px solid #333; }
-        .footer { text-align: center; margin-top: 30px; font-size: 9pt; color: #888; border-top: 1px solid #ccc; padding-top: 10px;}
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f7f8fa;
+            color: #333;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .invoice-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 40px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Header */
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #007bff;
+            margin-bottom: 30px;
+        }
+        .clinic-logo img {
+            max-height: 70px;
+        }
+        .clinic-details {
+            text-align: right;
+        }
+        .clinic-details h2 {
+            margin: 0;
+            color: #007bff;
+            font-size: 24px;
+        }
+
+        /* Bill To & Invoice Details */
+        .invoice-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        .bill-to, .invoice-details-section {
+            width: 48%;
+        }
+        .invoice-meta h3 {
+            font-size: 16px;
+            color: #555;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+            margin-top: 0;
+        }
+        .invoice-details-section table {
+            width: 100%;
+        }
+        .invoice-details-section td {
+            padding: 4px 0;
+        }
+        .invoice-details-section td:first-child {
+            font-weight: 500;
+            color: #444;
+        }
+
+        /* Items Table */
+        .invoice-items table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .invoice-items th, .invoice-items td {
+            border-bottom: 1px solid #e0e0e0;
+            padding: 12px;
+            text-align: left;
+        }
+        .invoice-items thead th {
+            background-color: #f7f8fa;
+            font-weight: 500;
+            color: #555;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+        .invoice-items .text-right { text-align: right; }
+        .invoice-items .item-description { font-weight: 500; }
+
+        /* Totals Section */
+        .invoice-summary {
+            display: flex;
+            justify-content: flex-end;
+        }
+        .totals-table {
+            width: 50%;
+        }
+        .totals-table td {
+            padding: 8px 12px;
+        }
+        .totals-table tr:last-child {
+            font-weight: 700;
+            font-size: 18px;
+        }
+        .totals-table .balance-due-row td {
+            background-color: #007bff;
+            color: #fff;
+            border-top: 2px solid #0056b3;
+        }
+        
+        /* Payment & Footer */
+        .payment-instructions {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #f7f8fa;
+            border: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .payment-instructions h4 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        .qr-code img {
+            max-width: 120px;
+        }
+        .invoice-footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #888;
+            font-size: 12px;
+        }
+        
+        /* Print Styles */
+        @media print {
+            body { background-color: #fff; }
+            .invoice-container { box-shadow: none; border: none; margin: 0; padding: 0; }
+            .print-button-container { display: none; }
+        }
+        .print-button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .print-button {
+            padding: 12px 30px;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .print-button:hover {
+            background-color: #218838;
+        }
     </style>
 </head>
-<button onclick="window.print()" class="button button-primary" style="position:fixed;bottom:32px;right:32px;z-index:9999;">
-    <i class="fas fa-print"></i> Print
-</button>
-<body onload="window.print()">
-    <div class="container">
-        <div class="header">
-            <h1>{{ CLINIC_NAME }}</h1>
-            <p>{{ CLINIC_ADDRESS }}</p>
-            <p>Phone: {{ CLINIC_PHONE }} | Email: {{ CLINIC_EMAIL }}</p>
-        </div>
+<body>
 
-        <div class="invoice-details">
-            <div class="patient-info">
-                <h2>Bill To</h2>
-                <p><strong>{{ invoice.patient.name }}</strong></p>
-                <p>Age: {{ invoice.patient.age }}</p>
-                <p>Contact: {{ invoice.patient.contact_number|default:'N/A' }}</p>
-                <p>Place: {{ invoice.patient.place|default:'N/A' }}</p>
+    <div class="invoice-container">
+        <header class="invoice-header">
+            <div class="clinic-logo">
+                <img src="{% static 'path/to/your/logo.png' %}" alt="Clinic Logo">
             </div>
-            <div class="invoice-meta">
-                <h2>Invoice Details</h2>
-                <p><strong>Invoice #:</strong> {{ invoice.invoice_number }}</p>
-                <p><strong>Date:</strong> {{ invoice.invoice_date|date:"F d, Y" }}</p>
-                <p><strong>Status:</strong> {{ invoice.get_status_display }}</p>
-                {% if invoice.appointment %}
-                <p><strong>Consulting Doctor:</strong> Dr. {{ invoice.appointment.doctor.name }}</p>
-                {% endif %}
+            <div class="clinic-details">
+                <h2>Babu Dental Clinic</h2>
+                <p>
+                    Beach Road, Kadapakkam, Cheyyur Taluk<br>
+                    Chengalpattu District, Tamilnadu - 603304
+                </p>
+                <p><strong>Phone:</strong> 04427526041 | <strong>Email:</strong> drbdcdental@gmail.com</p>
             </div>
-        </div>
+        </header>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Description</th>
-                    <th class="text-right">Unit Price</th>
-                    <th class="text-right">Qty</th>
-                    <th class="text-right">Discount</th>
-                    <th class="text-right">Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in invoice.invoice_items.all %}
-                <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td>{{ item.display_description }}</td>
-                    <td class="text-right">₹{{ item.unit_price|floatformat:2 }}</td>
-                    <td class="text-right">{{ item.quantity }}</td>
-                    <td class="text-right">- ₹{{ item.discount|floatformat:2 }}</td>
-                    <td class="text-right">₹{{ item.net_price|floatformat:2 }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <section class="invoice-meta">
+            <div class="bill-to">
+                <h3>Bill To</h3>
+                <p>
+                    <strong>{{ invoice.patient.name }}</strong><br>
+                    Age: {{ invoice.patient.age }}<br>
+                    Contact: {{ invoice.patient.contact_number }}<br>
+                    Place: {{ invoice.patient.address|default:"Kottaikadu" }}
+                </p>
+            </div>
+            <div class="invoice-details-section">
+                <h3>Invoice Details</h3>
+                <table>
+                    <tr><td>Invoice #:</td><td><strong>{{ invoice.invoice_number }}</strong></td></tr>
+                    <tr><td>Date:</td><td>{{ invoice.invoice_date|date:"F d, Y" }}</td></tr>
+                    {% if invoice.doctor %}
+                    <tr><td>Doctor:</td><td>{{ invoice.doctor.name }}</td></tr>
+                    {% endif %}
+                    <tr><td>Status:</td><td>{{ invoice.get_status_display }}</td></tr>
+                </table>
+            </div>
+        </section>
 
-        <div class="summary">
+        <section class="invoice-items">
             <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Description</th>
+                        <th class="text-right">Unit Price</th>
+                        <th class="text-right">Qty</th>
+                        <th class="text-right">Discount</th>
+                        <th class="text-right">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in invoice.invoice_items.all %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td class="item-description">{{ item.display_description }}</td>
+                        <td class="text-right">₹{{ item.unit_price|floatformat:2 }}</td>
+                        <td class="text-right">{{ item.quantity }}</td>
+                        <td class="text-right">- ₹{{ item.discount|floatformat:2 }}</td>
+                        <td class="text-right">₹{{ item.net_price|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <section class="invoice-summary">
+            <table class="totals-table">
                 <tr>
                     <td>Subtotal:</td>
                     <td class="text-right">₹{{ invoice.total_amount|floatformat:2 }}</td>
@@ -97,16 +250,33 @@
                     <td>Amount Paid:</td>
                     <td class="text-right">- ₹{{ invoice.amount_paid|floatformat:2 }}</td>
                 </tr>
-                <tr class="grand-total">
+                <tr class="balance-due-row">
                     <td>Balance Due:</td>
                     <td class="text-right">₹{{ invoice.balance_due|floatformat:2 }}</td>
                 </tr>
             </table>
-        </div>
+        </section>
+        
+        <section class="payment-instructions">
+            <div class="payment-info">
+                <h4>Payment Instructions</h4>
+                <p>Please make the payment to the following UPI ID or Bank Account.</p>
+                <p><strong>UPI ID:</strong> yourclinicupi@bank</p>
+                <p><strong>Bank:</strong> Your Bank Name, Branch<br><strong>A/C No:</strong> 1234567890, <strong>IFSC:</strong> ABC0123456</p>
+            </div>
+            <div class="qr-code">
+                <img src="{% static 'path/to/your/qr_code.png' %}" alt="Payment QR Code">
+            </div>
+        </section>
 
-        <div class="footer">
-            <p>Thank you for choosing our services.</p>
-        </div>
+        <footer class="invoice-footer">
+            <p>Thank you for choosing our services. We wish you the best of health!</p>
+        </footer>
     </div>
+
+    <div class="print-button-container">
+        <button class="print-button" onclick="window.print()">Print Invoice</button>
+    </div>
+
 </body>
 </html>

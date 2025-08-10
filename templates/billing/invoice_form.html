@@ -150,14 +150,13 @@ $(document).ready(function() {
         container.find('.formset-row:visible').each(function() {
             const row = $(this);
             if (row.find('input[name$="-DELETE"]').is(':checked')) return;
-            
             const qty = parseFloat(row.find('input[name$="-quantity"]').val()) || 1;
             const price = parseFloat(row.find('input[name$="-unit_price"]').val()) || 0;
             const discount = parseFloat(row.find('input[name$="-discount"]').val()) || 0;
             subtotal += qty * price;
-            itemDiscountTotal += qty * discount;
+            // FIX: Calculate discount as a flat amount per line item
+            itemDiscountTotal += discount;
         });
-
         const invoiceDiscount = parseFloat($('#id_discount').val()) || 0;
         const totalDiscount = itemDiscountTotal + invoiceDiscount;
         $('#summary-subtotal').text('₹' + subtotal.toFixed(2));
@@ -190,7 +189,6 @@ $(document).ready(function() {
         productSelect.on('change', function() {
             const variantId = $(this).val();
             stockSelect.empty().append('<option value=""></option>').trigger('change');
-            
             if (variantId) {
                 serviceSelect.prop('disabled', true).val(null).trigger('change.select2');
                 stockCell.addClass('visible');
@@ -225,28 +223,30 @@ $(document).ready(function() {
         });
     }
 
-    // Initialize existing rows
+    // Initialize listeners for the rows that load with the page
     container.find('.formset-row').each(function() {
         attachRowListeners($(this));
     });
 
-    // Handle adding new rows
+    // Handle adding new dynamic rows
     $('#add-item-button').on('click', function() {
         const totalForms = $('#id_items-TOTAL_FORMS');
         let formIdx = parseInt(totalForms.val(), 10);
         
+        // Create the new row from the template
         const newRowHtml = $('#empty-form-template').html().replace(/__prefix__/g, formIdx);
         const newRow = $(newRowHtml);
+        
+        // Add the new row to the container
         container.append(newRow);
         
-        // Let django-select2 initialize the new widgets
-        newRow.find('.django-select2').djangoSelect2();
-        
-        // Attach our custom logic
+        // Call attachRowListeners on the newly created row to activate its logic
         attachRowListeners(newRow);
         
+        // Increment the management form's count
         totalForms.val(formIdx + 1);
     });
+
 
     // Handle removing rows
     container.on('click', '.remove-row-btn', function() {
