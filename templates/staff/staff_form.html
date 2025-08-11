@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ page_title|default:"Add New Staff Member" }}{% endblock title %}
+{% block title %}{{ page_title|default:"Staff Member Form" }}{% endblock title %}
 
 {% block content %}
 <div class="detail-card" style="max-width: 900px; margin: 20px auto;">
@@ -57,7 +57,12 @@
                 <i class="fas fa-times"></i> Cancel
             </a>
             <button type="submit" class="button button-success">
-                <i class="fas fa-save"></i> Save Staff Member
+                <i class="fas fa-save"></i> 
+                {% if object %}
+                    Save Changes
+                {% else %}
+                    Save Staff Member
+                {% endif %}
             </button>
         </div>
     </form>

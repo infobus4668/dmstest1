@@ -25,7 +25,9 @@ def add_staff_member(request):
             return redirect('staff:staff_list')
     else:
         form = StaffMemberForm()
-    return render(request, 'staff/add_staff_member.html', {'form': form, 'page_title': 'Add New Staff Member'})
+    
+    # --- CHANGE 1: Point to the new template ---
+    return render(request, 'staff/staff_form.html', {'form': form, 'page_title': 'Add New Staff Member'})
 
 @login_required
 @permission_required('staff.change_staffmember', raise_exception=True)
@@ -39,7 +41,13 @@ def edit_staff_member(request, pk):
             return redirect('staff:staff_list')
     else:
         form = StaffMemberForm(instance=staff_member)
-    return render(request, 'staff/edit_staff_member.html', {'form': form, 'page_title': f'Edit Staff: {staff_member.name}'})
+    
+    # --- CHANGE 2: Point to the new template and pass the 'object' ---
+    return render(request, 'staff/staff_form.html', {
+        'form': form, 
+        'page_title': f'Edit Staff: {staff_member.name}',
+        'object': staff_member  # This is the key for our 'if' check in the template
+    })
 
 @login_required
 @permission_required('staff.delete_staffmember', raise_exception=True)
